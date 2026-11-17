@@ -2,6 +2,7 @@
 
 import { loadTrack } from "./track.js";
 import { Game } from "./game.js";
+import { createCarSprites } from "./renderer.js";
 import { formatLapTime } from "./qualifying.js";
 
 const canvas = document.querySelector("#game");
@@ -33,15 +34,27 @@ function updateHud(player, qualifying) {
   statusEl.textContent = qualifying.status;
 }
 
-loadTrack("./data/tracks.json", "prototype")
-  .then((track) => {
+function loadCarImage(url) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error(`Could not load car image "${url}".`));
+    image.src = url;
+  });
+}
+
+Promise.all([
+  loadTrack("./data/tracks.json", "prototype"),
+  loadCarImage("./elements/car.png")
+])
+  .then(([track, carImage]) => {
     nameEl.textContent = track.name;
     trackFooterEl.textContent = `${track.name} · R to restart`;
     game = new Game(canvas, track, {
       onUpdate(player, qualifying) {
         updateHud(player, qualifying);
       }
-    });
+    }, createCarSprites(carImage));
     restartButton.addEventListener("click", () => {
       game.restart();
       canvas.focus();

@@ -29,37 +29,76 @@ Learned:
 	- The PRD serves as the single source of truth proven to be really effective.
 
 Date: 11.17.2026
-Goal: Day 2 milestone — lap timing and five-attempt qualifying
-Implemented:
+Goal: 
+	- Day 2 milestone — lap timing and five-attempt qualifying
+	- Use the F1 car image and steer its front wheels
+Prompt used:
+	- You are a professional game developer who are very skilled in agentic AI, 
+	machine learning and vibe coding using AI. I am coding my game project using 
+	Cursor AI and I want to use Javascript for maximum compatibility with github 
+	pages for hosting the game on github page. Your task is to design a prompt to 
+	be inputted into Cursor AI so that the AI understand what needs to be achieve 
+	in the code and  everything must be based on my project-prd from the uploaded file.
+	- Add one more fix for the track, instead of having hard boundary on the sides right 
+	where the out of bound line is, implement the same F1 boundary idea where the hard 
+	boundary is out side and between the track and the hard boundary there is an area 
+	where car can still drive over but it will slow the car down like sand. The current 
+	hard boundary should be replaced by white lines boundary where car can still go over 
+	and this white lines are boundary between track and sand then the hard boundary is 
+	outside of the sand. having all 4 wheels over the white lines result in invalid lap. 
+	also, make sure the cornering are mark with red and white striped like photo below and 
+	this will be apply for all corners from now on as a default
+AI Implemented:
+	- Updated track.js, renderer.js, created qualifying.js, lap-detection.js
 	- World-coordinate forward start/finish crossing detection with rearming.
 	- Monotonic lap timing, valid/invalid lap counts, and fastest valid lap tracking.
 	- Five-attempt limit and strict benchmark result evaluation.
 	- Wall and static circular-obstacle collision invalidation for active laps.
 	- Qualifying HUD and session restart control (button or R).
 	- Restart resets the car, camera, lap detector, timer, and session counters.
-Tested:
-	- Deterministic browser checks for gate direction/rearming, stationary crossing rejection, timer, lap recording, collision deduplication, fastest-lap handling, strict benchmark comparison, five-attempt enforcement, restart, and obstacle response.
-	- Browser game-loop integration: forward crossing starts a lap, obstacle collision invalidates it, and restart restores the spawn/session.
-	- Game page, HUD, and restart button load and render through a local HTTP server.
-	- Keyboard acceleration and session restart return the displayed speed to zero.
-Unverified:
-	- Manual full-lap driving and timing through the keyboard controls.
-	- End-to-end playtesting with the rotating camera during a full lap.
-
-Date: 11.17.2026
-Goal: Track boundary zones, runoff handling, four-wheel track limits, and corner kerbs
-Implemented:
 	- Asphalt edge lines, configurable runoff strips, and hard barriers generated from the track centerline.
 	- Runoff drag and reduced acceleration while any wheel is off the asphalt.
 	- Four world-space wheel positions and all-four-wheel track-limit invalidation.
 	- Automatically generated red-and-white kerb stripes on curved sections.
 	- Reusable default boundary dimensions with optional per-track overrides.
 Tested:
+	- Deterministic browser checks for gate direction/rearming, stationary crossing rejection, timer, lap recording, collision deduplication, fastest-lap handling, strict benchmark comparison, five-attempt enforcement, restart, and obstacle response.
+	- Browser game-loop integration: forward crossing starts a lap, obstacle collision invalidates it, and restart restores the spawn/session.
+	- Game page, HUD, and restart button load and render through a local HTTP server.
+	- Keyboard acceleration and session restart return the displayed speed to zero.
 	- Browser geometry checks for asphalt centers/white lines, runoff, corner kerbs, and generated barrier segments.
 	- Four-wheel cases with 0, 1, 2, 3, and 4 wheels beyond the asphalt; only the four-wheel case invalidates, and repeated frames consume one attempt.
 	- Runoff acceleration from rest through the game input/update path and recovery back to asphalt.
 	- At full throttle, runoff drag settles below asphalt max speed; asphalt and runoff speed responses compared.
 	- Outer-barrier collision invalidation and non-colliding traversable runoff.
 	- Kerb contact remains valid and is treated as normal track surface.
+	- Car image loads and renders through the browser game.
+	- Four baked wheel areas are cut from the body and remain as separate wheel sprites.
+	- Left/right wheel angles produce distinct rendered output.
+Worked:
+	- New boundary with gravel works
+	- Gravel slow downs the car
+	- Timer works, start and stop on time, fastest time recorded, game state success or failure indicated successfully
+	- Restart button works
+	- Time validation work (time will not be valid if car goes out of boundary)
+	- Time resetted appropriately
+Failed:
+	- The gravel stop the car altogether, there isn't a way to get out of the gravel (fixed)
+	- The lap still recorded the lap time even when the car reverse then cross the finish line again (game validation issue)
+Changed:
+	- The hard boundary makes it hard to navigate the car, so we changed it to non-collide boundary and add a layer of gravel in between the boundary and the hard boundary
+	- Time was invalidated as soon as the car touch the boundary, now it only deleted if all 4 wheels are out of bounds. 
 Unverified:
-	- Manual full-circuit keyboard driving and long-duration balancing on multiple future track layouts.
+	- Manual full-lap driving and timing through the keyboard controls.
+	- End-to-end playtesting with the rotating camera during a full lap.
+
+Date: 11.17.2026
+Goal: 
+Implemented:
+	- Replaced the polygon car body with elements/car.png.
+	- Separated the baked wheel regions into independent wheel sprites at runtime.
+	- Rotates the front wheel sprites with left/right steering input; rear wheels follow the car.
+Tested:
+	
+Unverified:
+	- Manual visual inspection while steering during a full lap.

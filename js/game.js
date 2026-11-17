@@ -16,11 +16,12 @@ import { createQualifyingSession } from "./qualifying.js";
 import { getTrackSurface, isOnTrack } from "./track.js";
 
 export class Game {
-  constructor(canvas, track, hooks) {
+  constructor(canvas, track, hooks, carSprites) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
     this.track = track;
     this.hooks = hooks;
+    this.carSprites = carSprites;
     this.player = createPlayer(track.spawn);
     this.camera = createCamera(this.player.heading);
     this.lapDetector = createLapDetector(track, this.player);
@@ -113,7 +114,7 @@ export class Game {
       config.cameraViewHeight
     );
     drawTrack(ctx, this.track);
-    drawCar(ctx, this.player);
+    drawCar(ctx, this.player, this.carSprites);
     ctx.restore();
   }
 }

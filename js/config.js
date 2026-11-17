@@ -16,6 +16,7 @@ export const config = {
   carWidth: 2.24,
   wheelBase: 3.2,
   wheelTrack: 1.8,
+  maxWheelSteerAngle: 0.5,
   runoffWidth: 9,
   runoffFriction: 4,
   runoffAccelerationMultiplier: 0.55,

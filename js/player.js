@@ -10,6 +10,7 @@ export function createPlayer(spawn) {
     y: spawn.y,
     heading: spawn.heading,
     speed: 0,
+    steering: 0,
     radius: config.carRadius
   };
 }
@@ -40,6 +41,7 @@ export function getWheelPositions(player) {
 
 export function updatePlayer(player, input, dt, onRunoff = false) {
   const steer = (input.left ? 1 : 0) - (input.right ? 1 : 0);
+  player.steering = steer * config.maxWheelSteerAngle;
   player.heading = stepHeading(player.heading, player.speed, steer, config, dt);
   const modifiers = onRunoff
     ? {

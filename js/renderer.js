@@ -119,46 +119,116 @@ export function drawTrack(ctx, track) {
   drawBarriers(ctx, track);
 }
 
-export function drawCar(ctx, car) {
+const CAR_IMAGE_SIZE = 512;
+const WHEEL_CROPS = [
+  { x: 324, y: 73, centerX: 356, centerY: 105, front: true },
+  { x: 124, y: 73, centerX: 156, centerY: 105, front: true },
+  { x: 324, y: 391, centerX: 356, centerY: 423, front: false },
+  { x: 124, y: 391, centerX: 156, centerY: 423, front: false }
+];
+const WHEEL_CROP_SIZE = 64;
+
+export function createCarSprites(image) {
+  if (
+    image.naturalWidth !== CAR_IMAGE_SIZE ||
+    image.naturalHeight !== CAR_IMAGE_SIZE
+  ) {
+    throw new Error("The car image must be a 512x512 PNG.");
+  }
+
+  const body = document.createElement("canvas");
+  body.width = image.naturalWidth;
+  body.height = image.naturalHeight;
+  const bodyContext = body.getContext("2d");
+  if (!bodyContext) {
+    throw new Error("Could not prepare the car image.");
+  }
+  bodyContext.drawImage(image, 0, 0);
+
+  // The source faces up; rotate it so its nose follows the car's local +x axis.
+  const scale = config.carLength / CAR_IMAGE_SIZE;
+  const wheelSprites = WHEEL_CROPS.map((wheel) => {
+    const tire = document.createElement("canvas");
+    tire.width = WHEEL_CROP_SIZE;
+    tire.height = WHEEL_CROP_SIZE;
+    const tireContext = tire.getContext("2d");
+    if (!tireContext) {
+      throw new Error("Could not prepare the car wheel image.");
+    }
+    tireContext.drawImage(
+      image,
+      wheel.x,
+      wheel.y,
+      WHEEL_CROP_SIZE,
+      WHEEL_CROP_SIZE,
+      0,
+      0,
+      WHEEL_CROP_SIZE,
+      WHEEL_CROP_SIZE
+    );
+
+    return {
+      image: tire,
+      front: wheel.front,
+      x: (CAR_IMAGE_SIZE / 2 - wheel.centerY) * scale,
+      y: (wheel.centerX - CAR_IMAGE_SIZE / 2) * scale
+    };
+  });
+
+  bodyContext.save();
+  bodyContext.globalCompositeOperation = "destination-out";
+  // Remove the baked tires so the cropped wheel sprites can steer independently.
+  for (const wheel of WHEEL_CROPS) {
+    bodyContext.beginPath();
+    bodyContext.roundRect(wheel.centerX - 29, wheel.centerY - 29, 58, 58, 14);
+    bodyContext.fill();
+  }
+  bodyContext.restore();
+
+  return { body, wheels: wheelSprites, scale };
+}
+
+export function drawCar(ctx, car, sprites) {
   ctx.save();
   ctx.translate(car.x, car.y);
   ctx.rotate(car.heading);
 
-  ctx.fillStyle = "#111318";
-  const wheelX = config.wheelBase / 2;
-  const wheelY = config.wheelTrack / 2;
-  const wheelHalfLength = 0.35;
-  const wheelHalfWidth = 0.22;
-  ctx.fillRect(wheelX - wheelHalfLength, wheelY - wheelHalfWidth, wheelHalfLength * 2, wheelHalfWidth * 2);
-  ctx.fillRect(wheelX - wheelHalfLength, -wheelY - wheelHalfWidth, wheelHalfLength * 2, wheelHalfWidth * 2);
-  ctx.fillRect(-wheelX - wheelHalfLength, wheelY - wheelHalfWidth, wheelHalfLength * 2, wheelHalfWidth * 2);
-  ctx.fillRect(-wheelX - wheelHalfLength, -wheelY - wheelHalfWidth, wheelHalfLength * 2, wheelHalfWidth * 2);
+  if (sprites) {
+    const imageSize = config.carLength;
+    ctx.save();
+    ctx.rotate(Math.PI / 2);
+    ctx.drawImage(sprites.body, -imageSize / 2, -imageSize / 2, imageSize, imageSize);
+    ctx.restore();
 
-  ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
-  ctx.beginPath();
-  ctx.ellipse(0, 0, 2.15, 1.05, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = "#ff3b30";
-  ctx.beginPath();
-  ctx.moveTo(2.55, 0);
-  ctx.lineTo(1.15, 0.52);
-  ctx.lineTo(-1.55, 0.82);
-  ctx.lineTo(-2.05, 0.32);
-  ctx.lineTo(-2.05, -0.32);
-  ctx.lineTo(-1.55, -0.82);
-  ctx.lineTo(1.15, -0.52);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = "#f4f4f4";
-  ctx.fillRect(-2.25, -1.12, 0.34, 2.24);
-  ctx.fillRect(1.55, -1.02, 0.26, 2.04);
-
-  ctx.fillStyle = "#1a1a1a";
-  ctx.beginPath();
-  ctx.ellipse(0.15, 0, 0.62, 0.34, 0, 0, Math.PI * 2);
-  ctx.fill();
+    for (const wheel of sprites.wheels) {
+      ctx.save();
+      ctx.translate(wheel.x, wheel.y);
+      if (wheel.front) {
+        ctx.rotate(car.steering || 0);
+      }
+      const wheelSize = WHEEL_CROP_SIZE * sprites.scale;
+      ctx.drawImage(
+        wheel.image,
+        -wheelSize / 2,
+        -wheelSize / 2,
+        wheelSize,
+        wheelSize
+      );
+      ctx.restore();
+    }
+  } else {
+    ctx.fillStyle = "#ff3b30";
+    ctx.beginPath();
+    ctx.moveTo(2.55, 0);
+    ctx.lineTo(1.15, 0.52);
+    ctx.lineTo(-1.55, 0.82);
+    ctx.lineTo(-2.05, 0.32);
+    ctx.lineTo(-2.05, -0.32);
+    ctx.lineTo(-1.55, -0.82);
+    ctx.lineTo(1.15, -0.52);
+    ctx.closePath();
+    ctx.fill();
+  }
 
   ctx.restore();
 }
