@@ -1,0 +1,15 @@
+{
+  "tracks": [
+    {
+      "id": "prototype",
+      "name": "Square Test Circuit",
+      "difficulty": "prototype",
+      "benchmark": 45,
+      "shape": "rounded-rect",
+      "straight": 90,
+      "cornerRadius": 36,
+      "width": 16,
+      "sampleSpacing": 6
+    }
+  ]
+}

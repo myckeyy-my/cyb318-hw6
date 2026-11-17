@@ -1,12 +1,21 @@
 CHANGE LOG
 
 Date: 11.16.2026
-Goal: Establish the working development environment/the logic of the game and initial baseline code
+Goal: Day 1 prototype — car physics, square test circuit, rotating camera, wall bounce
 Prompt used:
-	- 
+	- Master development prompt, then architecture review.
+	- Human override: no Python anywhere in the project.
+	- A valid lap that beats the benchmark ends the session immediately (not built yet; recorded for the qualifying milestone).
+	- Wall hits bounce the car back slightly instead of leaving it stuck in the barrier.
+	- Day 1 deliverable is the car plus the square test track.
 AI generated:
+	- index.html, css/style.css, data/tracks.json
+	- js modules: config, input, physics, player, track, collision, camera, renderer, game, main
+	- README run notes
 Tested:
 Worked:
 Failed:
 Changed:
+	- Dropped app.py, requirements.txt, and the Python track generator from the plan.
+	- Track geometry is built in the browser from the JSON description.
 Learned:
