@@ -91,14 +91,3 @@ Changed:
 Unverified:
 	- Manual full-lap driving and timing through the keyboard controls.
 	- End-to-end playtesting with the rotating camera during a full lap.
-
-Date: 11.17.2026
-Goal: 
-Implemented:
-	- Replaced the polygon car body with elements/car.png.
-	- Separated the baked wheel regions into independent wheel sprites at runtime.
-	- Rotates the front wheel sprites with left/right steering input; rear wheels follow the car.
-Tested:
-	
-Unverified:
-	- Manual visual inspection while steering during a full lap.
