@@ -18,7 +18,7 @@ Cursor's Live Server extension works as well. Open `index.html` through that ser
 
 ## What is playable
 
-Day 1 prototype: the square test circuit, arcade car physics, a rotating camera, and wall collision. Qualifying, the other two circuits, and the menu flow are not built yet.
+The current prototype includes the square test circuit, arcade car physics, a rotating camera, trackside runoff, outer barriers, corner kerbs, static-obstacle collisions, and a five-attempt qualifying session. The lap timer starts and stops on forward start/finish crossings; collisions and all-four-wheel track-limit violations invalidate an active lap. Driving with any wheel on runoff adds drag and reduces acceleration. Kerbs are treated as part of the track for limits and retain normal handling. Track configuration can override the default runoff and barrier dimensions; the other circuits, championship progression, and menu flow are not built yet.
 
 ## Controls
 
@@ -26,3 +26,4 @@ Day 1 prototype: the square test circuit, arcade car physics, a rotating camera,
 - Right Arrow — steer right
 - Space — accelerate
 - D — brake
+- R — restart the qualifying session

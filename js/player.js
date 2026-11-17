@@ -14,10 +14,41 @@ export function createPlayer(spawn) {
   };
 }
 
-export function updatePlayer(player, input, dt) {
+export function getWheelPositions(player) {
+  const forwardX = Math.cos(player.heading);
+  const forwardY = Math.sin(player.heading);
+  const leftX = -forwardY;
+  const leftY = forwardX;
+  const front = config.wheelBase / 2;
+  const rear = -front;
+  const lateral = config.wheelTrack / 2;
+
+  function wheel(forward, side) {
+    return {
+      x: player.x + forwardX * forward + leftX * side,
+      y: player.y + forwardY * forward + leftY * side
+    };
+  }
+
+  return {
+    frontLeft: wheel(front, lateral),
+    frontRight: wheel(front, -lateral),
+    rearLeft: wheel(rear, lateral),
+    rearRight: wheel(rear, -lateral)
+  };
+}
+
+export function updatePlayer(player, input, dt, onRunoff = false) {
   const steer = (input.left ? 1 : 0) - (input.right ? 1 : 0);
   player.heading = stepHeading(player.heading, player.speed, steer, config, dt);
-  player.speed = stepSpeed(player.speed, input, config, dt);
+  const modifiers = onRunoff
+    ? {
+        accelerationMultiplier: config.runoffAccelerationMultiplier,
+        additionalFriction: config.runoffFriction,
+        dragCoefficient: config.runoffDragCoefficient
+      }
+    : undefined;
+  player.speed = stepSpeed(player.speed, input, config, dt, modifiers);
   player.x += Math.cos(player.heading) * player.speed * dt;
   player.y += Math.sin(player.heading) * player.speed * dt;
 }

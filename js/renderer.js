@@ -1,3 +1,5 @@
+import { config } from "./config.js";
+
 // Drawing only. Positions are world meters, already inside the camera transform.
 
 function strokeLoop(ctx, points) {
@@ -39,26 +41,71 @@ function drawStartLine(ctx, track) {
   }
 }
 
+function drawObstacles(ctx, obstacles) {
+  for (const obstacle of obstacles) {
+    ctx.fillStyle = "#ff9d2e";
+    ctx.beginPath();
+    ctx.arc(obstacle.x, obstacle.y, obstacle.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "#fff1d6";
+    ctx.lineWidth = 0.2;
+    ctx.beginPath();
+    ctx.arc(obstacle.x, obstacle.y, obstacle.radius * 0.55, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+function fillKerbs(ctx, kerbs) {
+  for (const kerb of kerbs) {
+    ctx.fillStyle = kerb.color;
+    ctx.beginPath();
+    ctx.moveTo(kerb.points[0].x, kerb.points[0].y);
+    for (let i = 1; i < kerb.points.length; i += 1) {
+      ctx.lineTo(kerb.points[i].x, kerb.points[i].y);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+function drawBarriers(ctx, track) {
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "#272a30";
+  ctx.lineWidth = track.barrierWidth;
+  strokeLoop(ctx, track.barrierEdges.left);
+  strokeLoop(ctx, track.barrierEdges.right);
+
+  ctx.strokeStyle = "#aeb3ba";
+  ctx.lineWidth = 0.24;
+  strokeLoop(ctx, track.barrierEdges.left);
+  strokeLoop(ctx, track.barrierEdges.right);
+}
+
 export function drawTrack(ctx, track) {
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
 
   ctx.strokeStyle = "#243028";
-  ctx.lineWidth = track.width + 8;
+  ctx.lineWidth =
+    track.width + 2 * (track.runoffWidth + track.barrierWidth + 4);
   strokeLoop(ctx, track.centerline);
 
-  ctx.strokeStyle = "#8f2424";
-  ctx.lineWidth = track.width + 1.6;
+  ctx.strokeStyle = "#c5a36d";
+  ctx.lineWidth = track.width + track.runoffWidth * 2;
   strokeLoop(ctx, track.centerline);
 
   ctx.strokeStyle = "#3c414c";
   ctx.lineWidth = track.width;
   strokeLoop(ctx, track.centerline);
 
+  fillKerbs(ctx, track.kerbs);
+
   ctx.strokeStyle = "#f2f2f2";
   ctx.lineWidth = 0.55;
-  strokeLoop(ctx, track.leftWall);
-  strokeLoop(ctx, track.rightWall);
+  strokeLoop(ctx, track.asphaltEdges.left);
+  strokeLoop(ctx, track.asphaltEdges.right);
 
   ctx.save();
   ctx.strokeStyle = "#d8d8d8";
@@ -68,12 +115,24 @@ export function drawTrack(ctx, track) {
   ctx.restore();
 
   drawStartLine(ctx, track);
+  drawObstacles(ctx, track.obstacles);
+  drawBarriers(ctx, track);
 }
 
 export function drawCar(ctx, car) {
   ctx.save();
   ctx.translate(car.x, car.y);
   ctx.rotate(car.heading);
+
+  ctx.fillStyle = "#111318";
+  const wheelX = config.wheelBase / 2;
+  const wheelY = config.wheelTrack / 2;
+  const wheelHalfLength = 0.35;
+  const wheelHalfWidth = 0.22;
+  ctx.fillRect(wheelX - wheelHalfLength, wheelY - wheelHalfWidth, wheelHalfLength * 2, wheelHalfWidth * 2);
+  ctx.fillRect(wheelX - wheelHalfLength, -wheelY - wheelHalfWidth, wheelHalfLength * 2, wheelHalfWidth * 2);
+  ctx.fillRect(-wheelX - wheelHalfLength, wheelY - wheelHalfWidth, wheelHalfLength * 2, wheelHalfWidth * 2);
+  ctx.fillRect(-wheelX - wheelHalfLength, -wheelY - wheelHalfWidth, wheelHalfLength * 2, wheelHalfWidth * 2);
 
   ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
   ctx.beginPath();

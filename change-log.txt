@@ -27,3 +27,39 @@ Changed:
 Learned:
 	- Building this game using Cursor is a lot faster than doing it on my own.
 	- The PRD serves as the single source of truth proven to be really effective.
+
+Date: 11.17.2026
+Goal: Day 2 milestone — lap timing and five-attempt qualifying
+Implemented:
+	- World-coordinate forward start/finish crossing detection with rearming.
+	- Monotonic lap timing, valid/invalid lap counts, and fastest valid lap tracking.
+	- Five-attempt limit and strict benchmark result evaluation.
+	- Wall and static circular-obstacle collision invalidation for active laps.
+	- Qualifying HUD and session restart control (button or R).
+	- Restart resets the car, camera, lap detector, timer, and session counters.
+Tested:
+	- Deterministic browser checks for gate direction/rearming, stationary crossing rejection, timer, lap recording, collision deduplication, fastest-lap handling, strict benchmark comparison, five-attempt enforcement, restart, and obstacle response.
+	- Browser game-loop integration: forward crossing starts a lap, obstacle collision invalidates it, and restart restores the spawn/session.
+	- Game page, HUD, and restart button load and render through a local HTTP server.
+	- Keyboard acceleration and session restart return the displayed speed to zero.
+Unverified:
+	- Manual full-lap driving and timing through the keyboard controls.
+	- End-to-end playtesting with the rotating camera during a full lap.
+
+Date: 11.17.2026
+Goal: Track boundary zones, runoff handling, four-wheel track limits, and corner kerbs
+Implemented:
+	- Asphalt edge lines, configurable runoff strips, and hard barriers generated from the track centerline.
+	- Runoff drag and reduced acceleration while any wheel is off the asphalt.
+	- Four world-space wheel positions and all-four-wheel track-limit invalidation.
+	- Automatically generated red-and-white kerb stripes on curved sections.
+	- Reusable default boundary dimensions with optional per-track overrides.
+Tested:
+	- Browser geometry checks for asphalt centers/white lines, runoff, corner kerbs, and generated barrier segments.
+	- Four-wheel cases with 0, 1, 2, 3, and 4 wheels beyond the asphalt; only the four-wheel case invalidates, and repeated frames consume one attempt.
+	- Runoff acceleration from rest through the game input/update path and recovery back to asphalt.
+	- At full throttle, runoff drag settles below asphalt max speed; asphalt and runoff speed responses compared.
+	- Outer-barrier collision invalidation and non-colliding traversable runoff.
+	- Kerb contact remains valid and is treated as normal track surface.
+Unverified:
+	- Manual full-circuit keyboard driving and long-duration balancing on multiple future track layouts.

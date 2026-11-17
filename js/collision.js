@@ -1,4 +1,4 @@
-// Circle-vs-wall test in world meters.
+// Circle-vs-wall and circle-vs-obstacle tests in world meters.
 // A hit moves the car back onto the asphalt, then gives it a small rebound
 // so it does not stay embedded in the barrier.
 
@@ -15,7 +15,7 @@ function closestPointOnSegment(x, y, segment) {
   };
 }
 
-function deepestOverlap(car, walls) {
+function deepestOverlap(car, walls, obstacles) {
   let best = null;
 
   for (const segment of walls) {
@@ -39,6 +39,24 @@ function deepestOverlap(car, walls) {
     }
 
     const penetration = car.radius - distance;
+    if (!best || penetration > best.penetration) {
+      best = { nx, ny, penetration };
+    }
+  }
+
+  for (const obstacle of obstacles) {
+    const dx = car.x - obstacle.x;
+    const dy = car.y - obstacle.y;
+    const distance = Math.hypot(dx, dy);
+    const penetration = car.radius + obstacle.radius - distance;
+    if (penetration <= 0) {
+      continue;
+    }
+
+    const nx =
+      distance > 1e-6 ? dx / distance : -Math.cos(car.heading);
+    const ny =
+      distance > 1e-6 ? dy / distance : -Math.sin(car.heading);
     if (!best || penetration > best.penetration) {
       best = { nx, ny, penetration };
     }
@@ -71,14 +89,14 @@ function applyBounce(car, normal) {
   }
 }
 
-// Returns true when the car overlapped a wall this frame.
+// Returns true when the car overlapped a boundary or obstacle this frame.
 // Velocity changes once. Position is corrected up to four times so a corner
 // (two walls at once) still pushes the car clear.
-export function resolveCollisions(car, walls) {
+export function resolveCollisions(car, walls, obstacles = []) {
   let bounceNormal = null;
 
   for (let pass = 0; pass < 4; pass += 1) {
-    const hit = deepestOverlap(car, walls);
+    const hit = deepestOverlap(car, walls, obstacles);
     if (!hit) {
       break;
     }

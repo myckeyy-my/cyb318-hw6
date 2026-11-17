@@ -3,10 +3,17 @@
 
 import { config } from "./config.js";
 import { readInput } from "./input.js";
-import { createPlayer, updatePlayer } from "./player.js";
+import { createPlayer, getWheelPositions, updatePlayer } from "./player.js";
 import { createCamera, updateCamera, applyCamera } from "./camera.js";
 import { resolveCollisions } from "./collision.js";
 import { drawTrack, drawCar } from "./renderer.js";
+import {
+  createLapDetector,
+  synchronizeLapDetector,
+  updateLapDetector
+} from "./lap-detection.js";
+import { createQualifyingSession } from "./qualifying.js";
+import { getTrackSurface, isOnTrack } from "./track.js";
 
 export class Game {
   constructor(canvas, track, hooks) {
@@ -16,6 +23,8 @@ export class Game {
     this.hooks = hooks;
     this.player = createPlayer(track.spawn);
     this.camera = createCamera(this.player.heading);
+    this.lapDetector = createLapDetector(track, this.player);
+    this.qualifying = createQualifyingSession(track);
     this.view = { width: 1, height: 1, dpr: 1 };
     this.lastTime = 0;
     this.resize();
@@ -51,10 +60,41 @@ export class Game {
 
   update(dt) {
     const input = readInput();
-    updatePlayer(this.player, input, dt);
-    resolveCollisions(this.player, this.track.walls);
+    const surface = getTrackSurface(
+      this.track,
+      getWheelPositions(this.player)
+    );
+    updatePlayer(this.player, input, dt, surface === "runoff");
+    const collided = resolveCollisions(
+      this.player,
+      this.track.walls,
+      this.track.obstacles
+    );
+    const now = performance.now();
+    if (collided) {
+      this.qualifying.handleCollision(now);
+      synchronizeLapDetector(this.lapDetector, this.player);
+    } else {
+      const wheels = Object.values(getWheelPositions(this.player));
+      const allWheelsOutside = wheels.every(
+        (wheel) => !isOnTrack(this.track, wheel)
+      );
+      if (allWheelsOutside) {
+        this.qualifying.handleTrackLimitViolation(now);
+        synchronizeLapDetector(this.lapDetector, this.player);
+      } else if (updateLapDetector(this.lapDetector, this.player)) {
+        this.qualifying.handleCrossing(now);
+      }
+    }
     updateCamera(this.camera, this.player.heading, config.cameraTurnRate, dt);
-    this.hooks.onUpdate(this.player);
+    this.hooks.onUpdate(this.player, this.qualifying.snapshot(now));
+  }
+
+  restart() {
+    this.player = createPlayer(this.track.spawn);
+    this.camera = createCamera(this.player.heading);
+    this.lapDetector = createLapDetector(this.track, this.player);
+    this.qualifying.reset();
   }
 
   render() {

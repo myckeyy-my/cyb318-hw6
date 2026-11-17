@@ -14,14 +14,21 @@
     </header>
     <div id="stage">
       <canvas id="game" tabindex="0" aria-label="Apex Rush test circuit"></canvas>
-      <div id="hud">
-        <span id="speed">0 km/h</span>
+      <div id="hud" aria-label="Qualifying information">
+        <div class="hud-row"><span id="level">LEVEL 1</span><span id="attempts">5 REMAINING</span></div>
+        <div class="hud-row"><span id="lap">LAP 0 / 5</span><span id="speed">0 km/h</span></div>
+        <div class="hud-row"><span>CURRENT</span><span id="current-time">--:---</span></div>
+        <div class="hud-row"><span>BEST</span><span id="best-time">--:---</span></div>
+        <div class="hud-row"><span>TARGET</span><span id="target-time">00:45.000</span></div>
+        <div class="hud-row"><span>VALID / INVALID</span><span id="lap-counts">0 / 0</span></div>
+        <p id="status" role="status" aria-live="polite">READY</p>
+        <button id="restart" type="button">RESTART SESSION</button>
       </div>
     </div>
     <p id="error" hidden></p>
     <footer>
       <p>Left and Right steer. Space accelerates. D brakes.</p>
-      <p>Square test circuit</p>
+      <p id="track-footer">Square test circuit · R to restart</p>
     </footer>
   </div>
   <script type="module" src="js/main.js"></script>

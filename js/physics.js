@@ -5,13 +5,17 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-export function stepSpeed(speed, input, cfg, dt) {
+export function stepSpeed(speed, input, cfg, dt, modifiers = {}) {
+  const acceleration = cfg.acceleration * (modifiers.accelerationMultiplier ?? 1);
+  const friction = cfg.friction + (modifiers.additionalFriction ?? 0);
+  const drag = Math.max(0, speed) * (modifiers.dragCoefficient ?? 0);
+
   if (input.brake) {
-    speed -= cfg.brake * dt;
+    speed -= (cfg.brake + drag) * dt;
   } else if (input.accelerate) {
-    speed += cfg.acceleration * dt;
+    speed += (acceleration - drag) * dt;
   } else {
-    speed -= cfg.friction * dt;
+    speed -= (friction + drag) * dt;
   }
 
   return clamp(speed, 0, cfg.maxSpeed);

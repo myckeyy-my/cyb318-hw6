@@ -57,12 +57,48 @@ canvas {
   position: absolute;
   top: 12px;
   left: 12px;
+  width: min(320px, calc(100% - 24px));
   padding: 8px 12px;
   background: rgba(8, 10, 14, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.12);
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-  font-size: 0.95rem;
-  letter-spacing: 0.04em;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+}
+
+.hud-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 0;
+}
+
+.hud-row span:first-child,
+#status {
+  color: #c5c8d0;
+}
+
+#status {
+  min-height: 1.2em;
+  margin: 8px 0;
+  color: #f5c451;
+}
+
+#restart {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: #222833;
+  color: #f3f4f6;
+  font: inherit;
+  cursor: pointer;
+}
+
+#restart:hover,
+#restart:focus-visible {
+  background: #303949;
+  outline: 2px solid #f5c451;
+  outline-offset: 1px;
 }
 
 #error {
