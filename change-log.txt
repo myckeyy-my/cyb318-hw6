@@ -3,19 +3,27 @@ CHANGE LOG
 Date: 11.16.2026
 Goal: Day 1 prototype — car physics, square test circuit, rotating camera, wall bounce
 Prompt used:
-	- Master development prompt, then architecture review.
-	- Human override: no Python anywhere in the project.
-	- A valid lap that beats the benchmark ends the session immediately (not built yet; recorded for the qualifying milestone).
-	- Wall hits bounce the car back slightly instead of leaving it stuck in the barrier.
-	- Day 1 deliverable is the car plus the square test track.
+	- You are a professional game developer who are very skilled in agentic AI, 
+	machine learning and vibe coding using AI. I am coding my game project using 
+	Cursor AI and I want to use Javascript for maximum compatibility with github 
+	pages for hosting the game on github page. Your task is to design a prompt to 
+	be inputted into Cursor AI so that the AI understand what needs to be achieve 
+	in the code and  everything must be based on my project-prd from the uploaded file.
 AI generated:
 	- index.html, css/style.css, data/tracks.json
 	- js modules: config, input, physics, player, track, collision, camera, renderer, game, main
 	- README run notes
 Tested:
+	- Game play mechanism
+	- Boundaries of track
+	- Camera angle top down view
 Worked:
+	- Basic navigation and control works
+	- Environment loaded successfully
 Failed:
 Changed:
 	- Dropped app.py, requirements.txt, and the Python track generator from the plan.
 	- Track geometry is built in the browser from the JSON description.
 Learned:
+	- Building this game using Cursor is a lot faster than doing it on my own.
+	- The PRD serves as the single source of truth proven to be really effective.
