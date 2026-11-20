@@ -84,7 +84,8 @@ canvas {
   color: #f5c451;
 }
 
-#restart {
+#restart,
+.game-button {
   width: 100%;
   padding: 6px 8px;
   border: 1px solid rgba(255, 255, 255, 0.24);
@@ -95,10 +96,59 @@ canvas {
 }
 
 #restart:hover,
-#restart:focus-visible {
+#restart:focus-visible,
+.game-button:hover,
+.game-button:focus-visible {
   background: #303949;
   outline: 2px solid #f5c451;
   outline-offset: 1px;
+}
+
+#next-round {
+  margin-top: 6px;
+}
+
+.results-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(8, 10, 14, 0.82);
+}
+
+#results[hidden] {
+  display: none;
+}
+
+.results-card {
+  width: min(440px, 100%);
+  padding: 24px;
+  background: #171c25;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-align: center;
+}
+
+.results-card h2 {
+  margin: 0 0 10px;
+  color: #f5c451;
+  letter-spacing: 0.08em;
+}
+
+.results-card p {
+  margin: 8px 0;
+}
+
+.results-details {
+  margin: 20px 0;
+  color: #c5c8d0;
+  text-align: left;
+}
+
+.results-actions {
+  display: grid;
+  gap: 8px;
 }
 
 #error {

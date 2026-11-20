@@ -17,9 +17,9 @@ The game uses an arcade-style driving system that balances accessibility
 with some realistic driving characteristics, including acceleration,
 braking, speed-dependent steering, and vehicle momentum.
 
-Players progress through a sequential championship consisting of at
-least three distinct stages. Each stage features a different circuit, a
-fixed qualifying benchmark, and increasing difficulty.
+Players progress through a sequential championship of three levels.
+Each level uses the same test circuit and driving rules, with a different
+fixed qualifying benchmark and increasing difficulty.
 
 The game will be designed to run entirely in a web browser and be
 deployable through GitHub Pages. Python, HTML, CSS, and JavaScript will
@@ -144,36 +144,20 @@ This initial circuit will be used to test: - Vehicle movement. -
 Steering and acceleration. - Camera rotation. - Track boundaries. -
 Collision detection. - Lap timing. - Start/finish-line detection.
 
-Once the core mechanics work, three distinct championship circuits will
-be implemented.
+For championship progression, all three levels use the same square test
+circuit. Their geometry and obstacles remain unchanged; difficulty
+increases only through the qualifying benchmark.
 
 **Level progression:**
 
-  -----------------------------------------------------------------------
+| Level | Track | Difficulty | Target lap time |
+| --- | --- | --- | --- |
+| Level 1 | Square Test Circuit | Easy | 45.000 seconds |
+| Level 2 | Square Test Circuit | Medium | 38.000 seconds |
+| Level 3 | Square Test Circuit | Hard | 32.000 seconds |
 
-  Stage                   Track design                      Difficulty
-
-  ----------------------- ----------------------- -----------------------
-
-  Level 1                 Simple circuit with               Easy
-                          gentle corners and  
-                          limited obstacles       
-
-  Level 2                 More complex circuit              Medium
-                          with tighter corners,  
-                          obstacles, and longer  
-                          straights               
-
-  Level 3                 Technical circuit with            Hard
-                          challenging turns, more 
-                          obstacles, and complex  
-                      layouts                 
-
-  -----------------------------------------------------------------------
-
-The final circuits should be inspired by recognizable real-world Formula
-1 circuits, but their implementation should use original or
-appropriately licensed graphics and track assets.
+Keep the qualifying benchmarks in centralized level configuration rather
+than in the track geometry data.
 
 ### 4.5 Qualifying System
 
@@ -519,11 +503,12 @@ are met.
 
 ## Final Project Scope
 
-**Apex Rush -- F1 Arcade Qualifying** is a three-circuit, top-down
+**Apex Rush -- F1 Arcade Qualifying** is a three-level, top-down
 arcade racing game featuring: - Top-down Formula-style racing. - Five
 timed qualifying attempts per level. - Fixed benchmark lap times. -
-Collision-based lap invalidation. - Three progressively challenging
-circuits. - Sequential championship progression. - Browser-based
+Collision-based lap invalidation. - One shared test circuit with
+progressively shorter qualifying targets. - Sequential championship
+progression. - Browser-based
 deployment through GitHub Pages.
 
 **Development constraint:** Five days. Prioritize working mechanics,

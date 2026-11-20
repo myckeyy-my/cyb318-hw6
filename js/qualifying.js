@@ -17,8 +17,8 @@ export function formatLapTime(milliseconds) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${String(remainder).padStart(3, "0")}`;
 }
 
-export function createQualifyingSession(track) {
-  if (!Number.isFinite(track.benchmark) || track.benchmark <= 0) {
+export function createQualifyingSession(track, targetLapTimeSeconds) {
+  if (!Number.isFinite(targetLapTimeSeconds) || targetLapTimeSeconds <= 0) {
     throw new Error(`Track "${track.id}" has an invalid qualifying benchmark.`);
   }
 
@@ -26,6 +26,7 @@ export function createQualifyingSession(track) {
   const session = {
     state: qualifyingStates.WAITING_FOR_START,
     result: null,
+    qualified: false,
     statusMessage: null,
     statusMessageUntil: 0,
     totalAttempts,
@@ -35,7 +36,7 @@ export function createQualifyingSession(track) {
     validLaps: 0,
     invalidLaps: 0,
     fastestValidLapMs: null,
-    targetLapTimeMs: track.benchmark * 1000,
+    targetLapTimeMs: targetLapTimeSeconds * 1000,
     lastLapTimeMs: null,
     lapStartedAt: null
   };
@@ -59,12 +60,14 @@ export function createQualifyingSession(track) {
   function completeSession() {
     session.state = qualifyingStates.SESSION_COMPLETED;
     session.lapStartedAt = null;
-    session.result =
-      session.fastestValidLapMs !== null &&
-      session.fastestValidLapMs < session.targetLapTimeMs
-        ? "QUALIFIED"
-        : "FAILED";
+    session.result = session.qualified ? "QUALIFIED" : "FAILED";
     session.statusMessage = null;
+  }
+
+  function updateQualification() {
+    session.qualified =
+      session.fastestValidLapMs !== null &&
+      session.fastestValidLapMs < session.targetLapTimeMs;
   }
 
   function consumeAttempt() {
@@ -100,6 +103,7 @@ export function createQualifyingSession(track) {
     ) {
       session.fastestValidLapMs = lapTime;
     }
+    updateQualification();
 
     if (session.attemptsRemaining === 0) {
       completeSession();
@@ -157,8 +161,10 @@ export function createQualifyingSession(track) {
     return {
       state: session.state,
       result: session.result,
-      status:
-        session.statusMessage && now < session.statusMessageUntil
+      qualified: session.qualified,
+      status: session.qualified
+        ? "QUALIFIED"
+        : session.statusMessage && now < session.statusMessageUntil
           ? session.statusMessage
           : phaseStatus,
       totalAttempts: session.totalAttempts,
@@ -173,9 +179,21 @@ export function createQualifyingSession(track) {
     };
   }
 
+  function finish() {
+    if (
+      !session.qualified ||
+      session.state === qualifyingStates.SESSION_COMPLETED
+    ) {
+      return false;
+    }
+    completeSession();
+    return true;
+  }
+
   function reset() {
     session.state = qualifyingStates.WAITING_FOR_START;
     session.result = null;
+    session.qualified = false;
     session.statusMessage = null;
     session.statusMessageUntil = 0;
     session.attemptsRemaining = totalAttempts;
@@ -193,6 +211,7 @@ export function createQualifyingSession(track) {
     handleCollision,
     handleTrackLimitViolation,
     snapshot,
+    finish,
     reset
   };
 }

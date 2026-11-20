@@ -2,10 +2,7 @@
   "tracks": [
     {
       "id": "prototype",
-      "level": 1,
       "name": "Square Test Circuit",
-      "difficulty": "prototype",
-      "benchmark": 45,
       "shape": "rounded-rect",
       "straight": 90,
       "cornerRadius": 36,

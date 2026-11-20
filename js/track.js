@@ -265,9 +265,6 @@ function validateSpec(spec) {
   if (spec.shape === "rounded-rect" && spec.cornerRadius <= spec.width / 2 + runoffWidth) {
     throw new Error(`Track "${spec.id}" has runoff that is too wide for its corner radius.`);
   }
-  if (!Number.isFinite(spec.benchmark) || spec.benchmark <= 0) {
-    throw new Error(`Track "${spec.id}" has an invalid qualifying benchmark.`);
-  }
   if (spec.obstacles !== undefined && !Array.isArray(spec.obstacles)) {
     throw new Error(`Track "${spec.id}" has an invalid obstacle list.`);
   }
@@ -313,9 +310,6 @@ export function buildTrack(spec) {
   return {
     id: spec.id,
     name: spec.name,
-    difficulty: spec.difficulty,
-    benchmark: spec.benchmark,
-    level: spec.level || 1,
     width: spec.width,
     runoffWidth,
     barrierWidth,

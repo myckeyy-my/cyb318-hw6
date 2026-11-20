@@ -12,8 +12,15 @@ import {
   synchronizeLapDetector,
   updateLapDetector
 } from "./lap-detection.js";
-import { createQualifyingSession } from "./qualifying.js";
+import {
+  createQualifyingSession,
+  qualifyingStates
+} from "./qualifying.js";
 import { getTrackSurface, isOnTrack } from "./track.js";
+import {
+  championshipLevels,
+  getChampionshipLevel
+} from "./championship.js";
 
 export class Game {
   constructor(canvas, track, hooks, carSprites) {
@@ -22,10 +29,16 @@ export class Game {
     this.track = track;
     this.hooks = hooks;
     this.carSprites = carSprites;
+    this.currentLevel = 1;
+    this.unlockedLevel = 1;
+    this.championshipWon = false;
     this.player = createPlayer(track.spawn);
     this.camera = createCamera(this.player.heading);
     this.lapDetector = createLapDetector(track, this.player);
-    this.qualifying = createQualifyingSession(track);
+    this.qualifying = createQualifyingSession(
+      track,
+      getChampionshipLevel(this.currentLevel).targetLapTimeSeconds
+    );
     this.view = { width: 1, height: 1, dpr: 1 };
     this.lastTime = 0;
     this.resize();
@@ -60,6 +73,16 @@ export class Game {
   }
 
   update(dt) {
+    const now = performance.now();
+    const currentResult = this.qualifying.snapshot(now);
+    if (currentResult.qualified) {
+      this.unlockNextLevel();
+    }
+    if (currentResult.state === qualifyingStates.SESSION_COMPLETED) {
+      this.hooks.onUpdate(this.player, currentResult);
+      return;
+    }
+
     const input = readInput();
     const surface = getTrackSurface(
       this.track,
@@ -71,7 +94,6 @@ export class Game {
       this.track.walls,
       this.track.obstacles
     );
-    const now = performance.now();
     if (collided) {
       this.qualifying.handleCollision(now);
       synchronizeLapDetector(this.lapDetector, this.player);
@@ -88,14 +110,100 @@ export class Game {
       }
     }
     updateCamera(this.camera, this.player.heading, config.cameraTurnRate, dt);
-    this.hooks.onUpdate(this.player, this.qualifying.snapshot(now));
+    const qualifying = this.qualifying.snapshot(now);
+    if (qualifying.qualified) {
+      this.unlockNextLevel();
+    }
+    this.hooks.onUpdate(this.player, qualifying);
   }
 
   restart() {
+    if (this.championshipWon) {
+      return false;
+    }
+    this.resetQualifyingSession();
+    this.hooks.onUpdate(
+      this.player,
+      this.qualifying.snapshot(performance.now())
+    );
+    return true;
+  }
+
+  resetQualifyingSession() {
     this.player = createPlayer(this.track.spawn);
     this.camera = createCamera(this.player.heading);
     this.lapDetector = createLapDetector(this.track, this.player);
-    this.qualifying.reset();
+    this.qualifying = createQualifyingSession(
+      this.track,
+      getChampionshipLevel(this.currentLevel).targetLapTimeSeconds
+    );
+  }
+
+  finishQualifying() {
+    if (this.championshipWon || !this.qualifying.finish()) {
+      return false;
+    }
+    this.unlockNextLevel();
+    this.hooks.onUpdate(
+      this.player,
+      this.qualifying.snapshot(performance.now())
+    );
+    return true;
+  }
+
+  advanceLevel() {
+    if (this.championshipWon) {
+      return false;
+    }
+
+    const result = this.qualifying.snapshot(performance.now());
+    if (
+      result.state !== "SESSION_COMPLETED" ||
+      result.result !== "QUALIFIED"
+    ) {
+      return false;
+    }
+    this.unlockNextLevel();
+
+    if (this.currentLevel === championshipLevels.length) {
+      this.championshipWon = true;
+      if (this.hooks.onVictory) {
+        this.hooks.onVictory();
+      }
+      return true;
+    }
+
+    const nextLevel = this.currentLevel + 1;
+    if (nextLevel > this.unlockedLevel) {
+      return false;
+    }
+
+    this.currentLevel = nextLevel;
+    this.unlockedLevel = nextLevel;
+    this.resetQualifyingSession();
+    this.hooks.onUpdate(
+      this.player,
+      this.qualifying.snapshot(performance.now())
+    );
+    return true;
+  }
+
+  restartChampionship() {
+    this.currentLevel = 1;
+    this.unlockedLevel = 1;
+    this.championshipWon = false;
+    this.resetQualifyingSession();
+    this.hooks.onUpdate(
+      this.player,
+      this.qualifying.snapshot(performance.now())
+    );
+  }
+
+  unlockNextLevel() {
+    this.unlockedLevel = Math.min(
+      championshipLevels.length,
+      Math.max(this.unlockedLevel, this.currentLevel + 1)
+    );
   }
 
   render() {
