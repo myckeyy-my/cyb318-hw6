@@ -91,3 +91,25 @@ Changed:
 Unverified:
 	- Manual full-lap driving and timing through the keyboard controls.
 	- End-to-end playtesting with the rotating camera during a full lap.
+
+Date: 11.20.2026
+Goal:
+	- Add a distinct fictional circuit for each championship level.
+AI Implemented:
+	- Added spline-based centerline track generation and retained the rounded-rectangle prototype.
+	- Added Apex GP, Harbor Street, and Velocity GP circuits with the same 16-unit asphalt width.
+	- Reshaped Harbor Street to maintain clearance between adjacent road, runoff, and barrier edges.
+	- Reworked Velocity GP with long straights and four tighter rounded corners.
+	- Added rectangular centerline dimensions for independently configured horizontal and vertical straights.
+	- Updated championship track selection to load the configured circuit for each level.
+	- Updated the HUD track name and project documentation.
+Tested:
+	- Browser checks for all three track loads, equal widths, closed geometry, and start/finish crossings.
+	- Centerline and asphalt boundary intersection checks on all circuits.
+	- Harbor Street runoff and barrier boundaries: no self-intersections; 45.49-unit non-adjacent clearance versus a 35.4-unit boundary envelope.
+	- Level 3 geometry check: no barrier/asphalt intersections or self-crossings; 22-unit corner radius versus a 17.7-unit hard-border offset.
+	- Sequential level transitions, benchmark selection, session resets, and Level 3 victory.
+	- Automatic success and failure after five attempts.
+	- Browser rendering benchmark for generated kerbs and track geometry.
+Unverified:
+	- Manual full-lap keyboard driving on every circuit.

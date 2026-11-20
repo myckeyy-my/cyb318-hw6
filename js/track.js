@@ -1,8 +1,5 @@
-// Loads a circuit description from JSON and turns it into world geometry.
-// The square prototype is stored as a few numbers (straight length, corner
-// radius, width). This module samples that shape into a centerline, an inner
-// wall, an outer wall, a start line, and a spawn pose.
-// Gameplay code uses those points. It does not rebuild the square itself.
+// Loads circuit descriptions and generates their world-space centerlines,
+// boundaries, kerbs, start lines, and spawn poses.
 
 import { config } from "./config.js";
 
@@ -35,22 +32,88 @@ function sampleArc(points, cx, cy, radius, a0, a1, spacing) {
 }
 
 function buildCenterline(spec) {
-  const half = spec.straight / 2;
+  if (spec.shape === "spline") {
+    return buildSplineCenterline(spec);
+  }
+
+  const halfX = (spec.straightX ?? spec.straight) / 2;
+  const halfY = (spec.straightY ?? spec.straight) / 2;
   const radius = spec.cornerRadius;
   const spacing = spec.sampleSpacing;
   const points = [];
 
   // Counterclockwise, starting at the west end of the south straight.
-  sampleStraight(points, -half, -(half + radius), half, -(half + radius), spacing);
-  sampleArc(points, half, -half, radius, -Math.PI / 2, 0, spacing);
-  sampleStraight(points, half + radius, -half, half + radius, half, spacing);
-  sampleArc(points, half, half, radius, 0, Math.PI / 2, spacing);
-  sampleStraight(points, half, half + radius, -half, half + radius, spacing);
-  sampleArc(points, -half, half, radius, Math.PI / 2, Math.PI, spacing);
-  sampleStraight(points, -(half + radius), half, -(half + radius), -half, spacing);
-  sampleArc(points, -half, -half, radius, Math.PI, Math.PI * 1.5, spacing);
+  sampleStraight(
+    points,
+    -halfX,
+    -(halfY + radius),
+    halfX,
+    -(halfY + radius),
+    spacing
+  );
+  sampleArc(points, halfX, -halfY, radius, -Math.PI / 2, 0, spacing);
+  sampleStraight(points, halfX + radius, -halfY, halfX + radius, halfY, spacing);
+  sampleArc(points, halfX, halfY, radius, 0, Math.PI / 2, spacing);
+  sampleStraight(
+    points,
+    halfX,
+    halfY + radius,
+    -halfX,
+    halfY + radius,
+    spacing
+  );
+  sampleArc(points, -halfX, halfY, radius, Math.PI / 2, Math.PI, spacing);
+  sampleStraight(
+    points,
+    -(halfX + radius),
+    halfY,
+    -(halfX + radius),
+    -halfY,
+    spacing
+  );
+  sampleArc(points, -halfX, -halfY, radius, Math.PI, Math.PI * 1.5, spacing);
 
   return points;
+}
+
+function interpolateSplinePoint(p0, p1, p2, p3, amount) {
+  const knotDistance = (a, b) => Math.sqrt(Math.hypot(b.x - a.x, b.y - a.y));
+  const t0 = 0;
+  const t1 = t0 + knotDistance(p0, p1);
+  const t2 = t1 + knotDistance(p1, p2);
+  const t3 = t2 + knotDistance(p2, p3);
+  const t = t1 + (t2 - t1) * amount;
+  const interpolate = (a, b, ta, tb) => ({
+    x: ((tb - t) * a.x + (t - ta) * b.x) / (tb - ta),
+    y: ((tb - t) * a.y + (t - ta) * b.y) / (tb - ta)
+  });
+  const a1 = interpolate(p0, p1, t0, t1);
+  const a2 = interpolate(p1, p2, t1, t2);
+  const a3 = interpolate(p2, p3, t2, t3);
+  const b1 = interpolate(a1, a2, t0, t2);
+  const b2 = interpolate(a2, a3, t1, t3);
+  return interpolate(b1, b2, t1, t2);
+}
+
+function buildSplineCenterline(spec) {
+  const points = spec.points;
+  const centerline = [];
+
+  for (let index = 0; index < points.length; index += 1) {
+    const p0 = points[(index - 1 + points.length) % points.length];
+    const p1 = points[index];
+    const p2 = points[(index + 1) % points.length];
+    const p3 = points[(index + 2) % points.length];
+    const segmentLength = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+    const samples = Math.max(1, Math.ceil(segmentLength / spec.sampleSpacing));
+
+    for (let sample = 0; sample < samples; sample += 1) {
+      const point = interpolateSplinePoint(p0, p1, p2, p3, sample / samples);
+      pushPoint(centerline, point.x, point.y);
+    }
+  }
+
+  return centerline;
 }
 
 function offsetWalls(center, width) {
@@ -237,11 +300,26 @@ function nearestIndex(points, x, y) {
 }
 
 function validateSpec(spec) {
-  if (spec.shape !== "rounded-rect") {
+  if (spec.shape !== "rounded-rect" && spec.shape !== "spline") {
     throw new Error(`Track "${spec.id}" uses an unsupported shape.`);
   }
-  if (!(spec.straight > 0) || !(spec.cornerRadius > 0) || !(spec.width > 0)) {
+  if (!(spec.width > 0)) {
     throw new Error(`Track "${spec.id}" has invalid dimensions.`);
+  }
+  const straightX = spec.straightX ?? spec.straight;
+  const straightY = spec.straightY ?? spec.straight;
+  if (
+    !Number.isFinite(spec.sampleSpacing) ||
+    spec.sampleSpacing <= 0 ||
+    (spec.shape === "rounded-rect" &&
+      (!Number.isFinite(straightX) ||
+        straightX <= 0 ||
+        !Number.isFinite(straightY) ||
+        straightY <= 0 ||
+        !Number.isFinite(spec.cornerRadius) ||
+        spec.cornerRadius <= 0))
+  ) {
+    throw new Error(`Track "${spec.id}" has invalid centerline dimensions.`);
   }
   if (spec.width < 10) {
     throw new Error(`Track "${spec.id}" is narrower than the car can drive.`);
@@ -264,6 +342,30 @@ function validateSpec(spec) {
   }
   if (spec.shape === "rounded-rect" && spec.cornerRadius <= spec.width / 2 + runoffWidth) {
     throw new Error(`Track "${spec.id}" has runoff that is too wide for its corner radius.`);
+  }
+  if (spec.shape === "spline") {
+    if (
+      !Array.isArray(spec.points) ||
+      spec.points.length < 4 ||
+      spec.points.some(
+        (point) =>
+          !point ||
+          !Number.isFinite(point.x) ||
+          !Number.isFinite(point.y)
+      ) ||
+      !spec.startPoint ||
+      !Number.isFinite(spec.startPoint.x) ||
+      !Number.isFinite(spec.startPoint.y)
+    ) {
+      throw new Error(`Track "${spec.id}" has an invalid spline centerline.`);
+    }
+    for (let index = 0; index < spec.points.length; index += 1) {
+      const point = spec.points[index];
+      const next = spec.points[(index + 1) % spec.points.length];
+      if (Math.hypot(next.x - point.x, next.y - point.y) < 0.001) {
+        throw new Error(`Track "${spec.id}" has duplicate spline points.`);
+      }
+    }
   }
   if (spec.obstacles !== undefined && !Array.isArray(spec.obstacles)) {
     throw new Error(`Track "${spec.id}" has an invalid obstacle list.`);
@@ -301,8 +403,14 @@ export function buildTrack(spec) {
     kerbEdges,
     spec.kerbStripeLength ?? config.kerbStripeLength
   );
-  const half = spec.straight / 2;
-  const startIndex = nearestIndex(centerline, 0, -(half + spec.cornerRadius));
+  const startIndex =
+    spec.shape === "spline"
+      ? nearestIndex(centerline, spec.startPoint.x, spec.startPoint.y)
+      : nearestIndex(
+          centerline,
+          0,
+          -((spec.straightY ?? spec.straight) / 2 + spec.cornerRadius)
+        );
   const spawnIndex = (startIndex - 2 + centerline.length) % centerline.length;
   const spawn = centerline[spawnIndex];
   const ahead = centerline[(spawnIndex + 1) % centerline.length];

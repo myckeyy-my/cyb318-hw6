@@ -23,20 +23,21 @@ import {
 } from "./championship.js";
 
 export class Game {
-  constructor(canvas, track, hooks, carSprites) {
+  constructor(canvas, tracks, hooks, carSprites) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
-    this.track = track;
+    this.tracks = tracks;
     this.hooks = hooks;
     this.carSprites = carSprites;
     this.currentLevel = 1;
     this.unlockedLevel = 1;
     this.championshipWon = false;
-    this.player = createPlayer(track.spawn);
+    this.track = this.getTrackForLevel(this.currentLevel);
+    this.player = createPlayer(this.track.spawn);
     this.camera = createCamera(this.player.heading);
-    this.lapDetector = createLapDetector(track, this.player);
+    this.lapDetector = createLapDetector(this.track, this.player);
     this.qualifying = createQualifyingSession(
-      track,
+      this.track,
       getChampionshipLevel(this.currentLevel).targetLapTimeSeconds
     );
     this.view = { width: 1, height: 1, dpr: 1 };
@@ -130,6 +131,7 @@ export class Game {
   }
 
   resetQualifyingSession() {
+    this.track = this.getTrackForLevel(this.currentLevel);
     this.player = createPlayer(this.track.spawn);
     this.camera = createCamera(this.player.heading);
     this.lapDetector = createLapDetector(this.track, this.player);
@@ -204,6 +206,17 @@ export class Game {
       championshipLevels.length,
       Math.max(this.unlockedLevel, this.currentLevel + 1)
     );
+  }
+
+  getTrackForLevel(level) {
+    const levelConfiguration = getChampionshipLevel(level);
+    const track = this.tracks.get(levelConfiguration.trackId);
+    if (!track) {
+      throw new Error(
+        `Track "${levelConfiguration.trackId}" for level ${level} is not loaded.`
+      );
+    }
+    return track;
   }
 
   render() {

@@ -1,10 +1,13 @@
-// Boots the prototype: load the square circuit, then start the loop.
+// Loads the championship tracks, then starts the racing loop.
 
 import { loadTrack } from "./track.js";
 import { Game } from "./game.js";
 import { createCarSprites } from "./renderer.js";
 import { formatLapTime } from "./qualifying.js";
-import { getChampionshipLevel } from "./championship.js";
+import {
+  championshipLevels,
+  getChampionshipLevel
+} from "./championship.js";
 
 const canvas = document.querySelector("#game");
 const speedEl = document.querySelector("#speed");
@@ -39,6 +42,10 @@ function updateHud(player, qualifying) {
   }
 
   const level = getChampionshipLevel(game.currentLevel);
+  if (nameEl.textContent !== game.track.name) {
+    nameEl.textContent = game.track.name;
+    trackFooterEl.textContent = `${game.track.name} · R to restart`;
+  }
   speedEl.textContent = `${Math.round(player.speed * 3.6)} km/h`;
   levelEl.textContent = `LEVEL ${level.level} · ${level.difficulty.toUpperCase()}`;
   attemptsEl.textContent = `${qualifying.attemptsRemaining} REMAINING`;
@@ -96,14 +103,21 @@ function loadCarImage(url) {
   });
 }
 
+const trackIds = [
+  ...new Set(championshipLevels.map((level) => level.trackId))
+];
+
 Promise.all([
-  loadTrack("./data/tracks.json", getChampionshipLevel(1).trackId),
+  Promise.all(
+    trackIds.map((id) => loadTrack("./data/tracks.json", id))
+  ),
   loadCarImage("./elements/car.png")
 ])
-  .then(([track, carImage]) => {
-    nameEl.textContent = track.name;
-    trackFooterEl.textContent = `${track.name} · R to restart`;
-    game = new Game(canvas, track, {
+  .then(([loadedTracks, carImage]) => {
+    const tracks = new Map(
+      loadedTracks.map((track) => [track.id, track])
+    );
+    game = new Game(canvas, tracks, {
       onUpdate(player, qualifying) {
         updateHud(player, qualifying);
       },

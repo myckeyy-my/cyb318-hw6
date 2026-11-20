@@ -18,8 +18,8 @@ with some realistic driving characteristics, including acceleration,
 braking, speed-dependent steering, and vehicle momentum.
 
 Players progress through a sequential championship of three levels.
-Each level uses the same test circuit and driving rules, with a different
-fixed qualifying benchmark and increasing difficulty.
+Each level has an original fictional circuit and a fixed qualifying
+benchmark. Vehicle physics and qualifying rules remain consistent.
 
 The game will be designed to run entirely in a web browser and be
 deployable through GitHub Pages. Python, HTML, CSS, and JavaScript will
@@ -144,17 +144,20 @@ This initial circuit will be used to test: - Vehicle movement. -
 Steering and acceleration. - Camera rotation. - Track boundaries. -
 Collision detection. - Lap timing. - Start/finish-line detection.
 
-For championship progression, all three levels use the same square test
-circuit. Their geometry and obstacles remain unchanged; difficulty
-increases only through the qualifying benchmark.
+For championship progression, each level has a separate fictional
+circuit. All three use the original 16-world-unit asphalt width.
+Level 2 is a compact, corner-heavy street circuit; Level 3 combines long
+straights with four tight, rounded corners. These are original layouts, not
+reproductions of real-world circuits. Vehicle physics and boundary
+rules are identical across levels.
 
 **Level progression:**
 
 | Level | Track | Difficulty | Target lap time |
 | --- | --- | --- | --- |
-| Level 1 | Square Test Circuit | Easy | 45.000 seconds |
-| Level 2 | Square Test Circuit | Medium | 38.000 seconds |
-| Level 3 | Square Test Circuit | Hard | 32.000 seconds |
+| Level 1 | Apex GP Circuit | Easy | 45.000 seconds |
+| Level 2 | Harbor Street Circuit | Medium | 38.000 seconds |
+| Level 3 | Velocity GP Circuit | Hard | 32.000 seconds |
 
 Keep the qualifying benchmarks in centralized level configuration rather
 than in the track geometry data.

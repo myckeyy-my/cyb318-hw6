@@ -3,19 +3,19 @@ export const championshipLevels = Object.freeze([
     level: 1,
     difficulty: "Easy",
     targetLapTimeSeconds: 45,
-    trackId: "prototype"
+    trackId: "apex-circuit"
   }),
   Object.freeze({
     level: 2,
     difficulty: "Medium",
     targetLapTimeSeconds: 38,
-    trackId: "prototype"
+    trackId: "harbor-street"
   }),
   Object.freeze({
     level: 3,
     difficulty: "Hard",
     targetLapTimeSeconds: 32,
-    trackId: "prototype"
+    trackId: "velocity-gp"
   })
 ]);
 
