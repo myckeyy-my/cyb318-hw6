@@ -85,11 +85,16 @@ The core game does not require additional JavaScript packages or a separate game
 
 ---
 
-## 🚀 4. Running the Game Locally
+## 🚀 4. Running the Game
 
 Apex Rush is a browser-based application. You can run it using a local development server.
 
-### Option 1: Using Python HTTP Server
+### Option 1: Using the web application
+
+Navigate to: https://myckeyy-my.github.io/cyb318-hw6/
+
+
+### Option 2: Using Python HTTP Server (Locally)
 
 Python's built-in HTTP server provides a simple way to serve the game locally.
 
@@ -113,7 +118,7 @@ To stop the local server, return to the terminal and press:
 CTRL + C
 ```
 
-### Option 2: Using VS Code Live Server
+### Option 3: Using VS Code Live Server (Locally)
 
 1. Open Visual Studio Code.
 2. Navigate to the Extensions marketplace.
