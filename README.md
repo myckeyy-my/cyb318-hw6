@@ -56,7 +56,7 @@ Open a terminal or command prompt and navigate to the directory where you want t
 Clone the repository:
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/YOUR-REPOSITORY.git
+git clone https://github.com/myckeyy-my/cyb318-hw6.git
 ```
 
 Navigate into the project directory:
