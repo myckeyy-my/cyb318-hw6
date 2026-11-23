@@ -1,162 +1,196 @@
 CHANGE LOG
 
 Date: 11.16.2026
-Goal: Day 1 prototype — car physics, square test circuit, rotating camera, wall bounce
-Prompt used:
-	- You are a professional game developer who are very skilled in agentic AI, 
-	machine learning and vibe coding using AI. I am coding my game project using 
-	Cursor AI and I want to use Javascript for maximum compatibility with github 
-	pages for hosting the game on github page. Your task is to design a prompt to 
-	be inputted into Cursor AI so that the AI understand what needs to be achieve 
-	in the code and  everything must be based on my project-prd from the uploaded file.
-AI generated:
-	- index.html, css/style.css, data/tracks.json
-	- js modules: config, input, physics, player, track, collision, camera, renderer, game, main
-	- README run notes
+
+Goal:
+- Day 1 prototype: implement basic car physics, a square test circuit, rotating camera, and wall collision/bounce mechanics.
+
+Prompt:
+- Instructed Cursor AI to act as a professional game developer experienced in agentic AI, machine learning, and AI-assisted development.
+- Requested a JavaScript-based game compatible with GitHub Pages, using the uploaded Project Requirements Document (PRD) as the single source of truth for implementation.
+
+AI Implemented:
+- Created index.html, css/style.css, and data/tracks.json.
+- Created JavaScript modules for configuration, input, physics, player, track, collision, camera, rendering, and game management.
+- Generated README instructions for running the application.
+
 Tested:
-	- Game play mechanism
-	- Boundaries of track
-	- Camera angle top down view
+- Basic gameplay mechanics.
+- Track boundaries.
+- Top-down camera perspective.
+
 Worked:
-	- Basic navigation and control works
-	- Environment loaded successfully
-Failed:
+- Basic car navigation and controls worked.
+- Game environment loaded successfully.
+
 Changed:
-	- Dropped app.py, requirements.txt, and the Python track generator from the plan.
-	- Track geometry is built in the browser from the JSON description.
+- Removed app.py, requirements.txt, and the Python track generator from the original development plan.
+- Implemented track geometry generation directly in the browser using JSON descriptions.
+
 Learned:
-	- Building this game using Cursor is a lot faster than doing it on my own.
-	- The PRD serves as the single source of truth proven to be really effective.
+- Using Cursor AI significantly accelerated game development compared to developing everything manually.
+- The PRD proved effective as a single source of truth for guiding AI implementation.
+
+
+------------------------------------------------------------
 
 Date: 11.17.2026
-Goal: 
-	- Day 2 milestone — lap timing and five-attempt qualifying
-	- Use the F1 car image and steer its front wheels
-Prompt used:
-	- You are a professional game developer who are very skilled in agentic AI, 
-	machine learning and vibe coding using AI. I am coding my game project using 
-	Cursor AI and I want to use Javascript for maximum compatibility with github 
-	pages for hosting the game on github page. Your task is to design a prompt to 
-	be inputted into Cursor AI so that the AI understand what needs to be achieve 
-	in the code and  everything must be based on my project-prd from the uploaded file.
-	- Add one more fix for the track, instead of having hard boundary on the sides right 
-	where the out of bound line is, implement the same F1 boundary idea where the hard 
-	boundary is out side and between the track and the hard boundary there is an area 
-	where car can still drive over but it will slow the car down like sand. The current 
-	hard boundary should be replaced by white lines boundary where car can still go over 
-	and this white lines are boundary between track and sand then the hard boundary is 
-	outside of the sand. having all 4 wheels over the white lines result in invalid lap. 
-	also, make sure the cornering are mark with red and white striped like photo below and 
-	this will be apply for all corners from now on as a default
+
+Goal:
+- Day 2 milestone — implement lap timing and a five-attempt qualifying system.
+- Integrate an F1 car image and implement front-wheel steering.
+- Improve track boundaries with gravel runoff areas, white boundary lines, hard barriers, and red-and-white corner kerbs.
+
+Prompt:
+- Requested a JavaScript-based implementation guided by the project PRD and optimized for GitHub Pages compatibility.
+- Requested improvements to track boundaries:
+  - Replace the existing hard track boundaries with white boundary lines.
+  - Add gravel runoff areas between the asphalt and outer hard barriers.
+  - Slow the car down when driving on gravel.
+  - Invalidate a lap only when all four wheels cross the white boundary lines.
+  - Automatically generate red-and-white striped kerbs at corners as the default track design.
+
 AI Implemented:
-	- Updated track.js, renderer.js, created qualifying.js, lap-detection.js
-	- World-coordinate forward start/finish crossing detection with rearming.
-	- Monotonic lap timing, valid/invalid lap counts, and fastest valid lap tracking.
-	- Five-attempt limit and strict benchmark result evaluation.
-	- Wall and static circular-obstacle collision invalidation for active laps.
-	- Qualifying HUD and session restart control (button or R).
-	- Restart resets the car, camera, lap detector, timer, and session counters.
-	- Asphalt edge lines, configurable runoff strips, and hard barriers generated from the track centerline.
-	- Runoff drag and reduced acceleration while any wheel is off the asphalt.
-	- Four world-space wheel positions and all-four-wheel track-limit invalidation.
-	- Automatically generated red-and-white kerb stripes on curved sections.
-	- Reusable default boundary dimensions with optional per-track overrides.
+- Updated track.js and renderer.js; created qualifying.js and lap-detection.js.
+- Implemented start/finish line detection using world coordinates, including directional crossing validation and rearming.
+- Implemented lap timing, valid/invalid lap tracking, and fastest valid lap recording.
+- Added a five-attempt qualifying limit and benchmark-based success/failure evaluation.
+- Implemented lap invalidation upon wall or static obstacle collisions.
+- Added a qualifying HUD and session restart functionality using a button or the R key.
+- Implemented session restart functionality that resets the car, camera, timer, lap detector, and session counters.
+- Generated asphalt boundary lines, gravel runoff strips, and hard barriers based on the track centerline.
+- Added gravel drag and reduced acceleration when the car drives outside the asphalt.
+- Implemented four-wheel position tracking and track-limit validation.
+- Automatically generated red-and-white kerb stripes along curved track sections.
+- Created reusable default boundary dimensions with optional track-specific configurations.
+- Integrated the F1 car image and separate front-wheel sprites with adjustable steering angles.
+
 Tested:
-	- Deterministic browser checks for gate direction/rearming, stationary crossing rejection, timer, lap recording, collision deduplication, fastest-lap handling, strict benchmark comparison, five-attempt enforcement, restart, and obstacle response.
-	- Browser game-loop integration: forward crossing starts a lap, obstacle collision invalidates it, and restart restores the spawn/session.
-	- Game page, HUD, and restart button load and render through a local HTTP server.
-	- Keyboard acceleration and session restart return the displayed speed to zero.
-	- Browser geometry checks for asphalt centers/white lines, runoff, corner kerbs, and generated barrier segments.
-	- Four-wheel cases with 0, 1, 2, 3, and 4 wheels beyond the asphalt; only the four-wheel case invalidates, and repeated frames consume one attempt.
-	- Runoff acceleration from rest through the game input/update path and recovery back to asphalt.
-	- At full throttle, runoff drag settles below asphalt max speed; asphalt and runoff speed responses compared.
-	- Outer-barrier collision invalidation and non-colliding traversable runoff.
-	- Kerb contact remains valid and is treated as normal track surface.
-	- Car image loads and renders through the browser game.
-	- Four baked wheel areas are cut from the body and remain as separate wheel sprites.
-	- Left/right wheel angles produce distinct rendered output.
+- Start/finish line direction detection, rearming, stationary crossing rejection, lap timing, and lap recording.
+- Collision invalidation, duplicate collision prevention, fastest-lap tracking, and benchmark evaluation.
+- Five-attempt enforcement and session restart functionality.
+- Browser game-loop integration, including lap initiation, obstacle collision, and session restoration.
+- Game page, HUD, and restart button rendering through a local HTTP server.
+- Keyboard acceleration and restart behavior.
+- Track geometry, including asphalt boundaries, gravel runoff, corner kerbs, and hard barriers.
+- Four-wheel boundary detection with zero, one, two, three, and four wheels outside the asphalt.
+- Gravel acceleration and recovery behavior when returning to asphalt.
+- Outer-barrier collision and non-colliding gravel runoff.
+- Kerb contact without invalidating the lap.
+- Car image loading and rendering.
+- Separate wheel sprites and different left/right steering angles.
+
 Worked:
-	- New boundary with gravel works
-	- Gravel slow downs the car
-	- Timer works, start and stop on time, fastest time recorded, game state success or failure indicated successfully
-	- Restart button works
-	- Time validation work (time will not be valid if car goes out of boundary)
-	- Time resetted appropriately
+- Gravel runoff areas and their speed-reduction mechanics worked.
+- Lap timer successfully started and stopped, recorded the fastest valid lap, and displayed success or failure.
+- Restart button worked correctly.
+- Lap validation correctly invalidated attempts when all four wheels crossed the track boundary.
+- Lap timer and session data reset appropriately.
+
 Failed:
-	- The gravel stop the car altogether, there isn't a way to get out of the gravel (fixed)
-	- The lap still recorded the lap time even when the car reverse then cross the finish line again (game validation issue)
+- The gravel initially slowed the car so much that it became impossible to drive out of it. This issue was subsequently fixed.
+- The lap detection system initially recorded a lap when the car reversed direction and crossed the finish line again. This was identified as a validation issue.
+
 Changed:
-	- The hard boundary makes it hard to navigate the car, so we changed it to non-collide boundary and add a layer of gravel in between the boundary and the hard boundary
-	- Time was invalidated as soon as the car touch the boundary, now it only deleted if all 4 wheels are out of bounds. 
-Unverified:
-	- Manual full-lap driving and timing through the keyboard controls.
-	- End-to-end playtesting with the rotating camera during a full lap.
+- Replaced the original hard track boundaries with non-colliding boundary lines and added gravel between the asphalt and outer hard barriers to improve navigation.
+- Changed track-limit validation so that a lap is invalidated only when all four wheels are outside the asphalt, rather than immediately when the car touches the boundary.
+
+Learned:
+- There are a lot of things that we must specifically mention so that the AI understand what to do
+- We should only develop one thing at a time to maximize accurate response from the AI
+
+------------------------------------------------------------
 
 Date: 11.20.2026
+
 Goal:
-	- Add a distinct fictional circuit for each championship level.
+- Add a distinct fictional racing circuit for each championship level.
+
 AI Implemented:
-	- Added spline-based centerline track generation and retained the rounded-rectangle prototype.
-	- Added Apex GP, Harbor Street, and Velocity GP circuits with the same 16-unit asphalt width.
-	- Reshaped Harbor Street to maintain clearance between adjacent road, runoff, and barrier edges.
-	- Reworked Velocity GP with long straights and four tighter rounded corners.
-	- Added rectangular centerline dimensions for independently configured horizontal and vertical straights.
-	- Updated championship track selection to load the configured circuit for each level.
-	- Updated the HUD track name and project documentation.
+- Added spline-based centerline track generation while retaining the original rounded-rectangle prototype.
+- Created three circuits: Apex GP, Harbor Street, and Velocity GP.
+- Standardized asphalt width to 16 units across all three circuits.
+- Redesigned Harbor Street to maintain sufficient clearance between adjacent road sections, runoff areas, and barriers.
+- Redesigned Velocity GP with long straights and four tighter rounded corners.
+- Added configurable rectangular centerline dimensions to independently control horizontal and vertical straights.
+- Updated championship track selection to load the appropriate circuit for each level.
+- Updated the HUD to display the track name and revised project documentation.
+
 Tested:
-	- Browser checks for all three track loads, equal widths, closed geometry, and start/finish crossings.
-	- Centerline and asphalt boundary intersection checks on all circuits.
-	- Harbor Street runoff and barrier boundaries: no self-intersections; 45.49-unit non-adjacent clearance versus a 35.4-unit boundary envelope.
-	- Level 3 geometry check: no barrier/asphalt intersections or self-crossings; 22-unit corner radius versus a 17.7-unit hard-border offset.
-	- Sequential level transitions, benchmark selection, session resets, and Level 3 victory.
-	- Automatic success and failure after five attempts.
-	- Browser rendering benchmark for generated kerbs and track geometry.
+- Browser loading of all three circuits.
+- Consistent asphalt width, closed track geometry, and start/finish line crossings.
+- Centerline and asphalt boundary intersections across all circuits.
+- Harbor Street runoff and barrier geometry, confirming no self-intersections and sufficient clearance between non-adjacent track sections.
+- Level 3 geometry, confirming no barrier/asphalt intersections or track self-crossings.
+- Level transitions, benchmark selection, session resets, and Level 3 victory.
+- Automatic success and failure evaluation after five attempts.
+- Browser rendering performance for generated kerbs and track geometry.
+
 Failed:
-	- The border interfere with the track create blockage
+- The outer border interfered with the racing track and created blockages.
+- There are a lot of bugs when the AI try to generate a new track where in the car might be completely boxed.
+
+Learned:
+- Iteration makes the AI more efficient rather than trying to get a thing right using a long prompt
+- Giving the AI examples helps it creates a baseline of expected outcomes
+
+
+------------------------------------------------------------
 
 Date: 11.21.2026
-Goal:
-	- Fix the layout of track level 2.
-	- Fix the border interfere with the track create blockage.
-	- 
-Prompt:
-	- The hard border blocked the track. Make sure no hard border is ever on the black racing track, merge hard border together if needed, for chicanes and sharp cornor, mege the border together like a triangle or A shape
-AI Implemented:
 
-Tested:
+Goal:
+- Fix the layout and geometry of the Level 2 track.
+- Resolve hard-border interference that created blockages on the racing track.
+- Add seven obstacles to Level 2 to increase difficulty.
+
+Prompt:
+- Requested that hard barriers never overlap or block the black asphalt racing surface.
+- Requested that connected hard-border sections be merged around chicanes and sharp corners, using triangular or A-shaped connections where necessary.
+- Requested seven orange obstacles to be randomly placed directly on the Level 2 racing track, using the existing orange obstacle in Level 1 as a reference.
+
+AI Implemented:
+- Joined hard-border corners and adjusted track boundaries to keep barriers clear of the asphalt.
+- Redesigned the Silverstone circuit with six chicanes and two hairpins.
+- Added seven orange obstacles to the Level 2 racing track.
 
 Failed:
-	- The border interfere with the track create blockage
+- The hard border continued to interfere with the racing track and create blockages.
 
-Additional changes made on 11.22.2026
-Goal:
-	- Update championship track assignments and qualifying targets.
-	- Add introductory tutorials and make Level 2 and Level 3 more challenging.
-AI Implemented:
-	- Assigned the existing Test Track to Level 1 and Silverstone to Level 2; set both targets to 50 seconds.
-	- Kept Level 3 on its dedicated Velocity GP circuit and raised its target to 40 seconds.
-	- Added Level 1 and Level 2 introductory screens with gameplay paused until the player continues.
-	- Redesigned Silverstone with six chicanes and two hairpins, and added seven orange road obstacles.
-	- Rebuilt Velocity GP with eight chicanes and two hairpins, and added five orange obstacles at randomized track positions.
-	- Joined hard-border corners and adjusted track boundaries to keep barriers clear of the asphalt.
-Tested:
-	- Updated championship tests for track assignments, targets, progression, circuit layouts, and obstacle placements.
-	- Checked circuit and border geometry for self-intersections and barrier overlap with asphalt.
-	- Verified Level 3's five obstacles are on the racing line, clear of the asphalt edges and spawn, and do not overlap one another.
-	- Confirmed the track data is valid JSON and the changes pass git diff whitespace checks.
-Unverified:
-	- The JavaScript test suite could not be run because Node.js is unavailable in the environment.
-	- Manual browser playtesting of the tutorials and obstacle challenges.
+Learned:
+- Once I got the right result from the AI, it is easy to replicate that based on the successful attempts.
+
+------------------------------------------------------------
 
 Date: 11.22.2026
+
 Goal:
-	- Design track for level 3
-	- 
+- Redesign the Level 3 circuit to make it more challenging.
+- Update championship track assignments and qualifying time objectives.
+- Add introductory tutorials for players.
+- Increase the difficulty of Levels 2 and 3.
+
 Prompt:
-	- Re create the track for level 3 to be much more challenging compared to track in level 2 and increase the time objective of track 3 to 40 seconds.
+- Requested a complete redesign of the Level 3 circuit to make it significantly more challenging than Level 2.
+- Requested an increase in the Level 3 qualifying time objective to 40 seconds.
+
 AI Implemented:
+- Updated championship track assignments:
+  - Level 1: Test Track.
+  - Level 2: Silverstone.
+  - Level 3: Dedicated Velocity GP circuit.
+- Set Level 1 and Level 2 qualifying targets to 50 seconds each.
+- Increased the Level 3 qualifying target to 40 seconds.
+- Added introductory screens for Levels 1 and 2, pausing gameplay until the player chooses to continue.
+- Redesigned Velocity GP with eight chicanes and two hairpins to increase difficulty.
+- Added five orange obstacles at randomized positions on the Level 3 racing track.
 
 Tested:
+- Updated championship tests covering track assignments, qualifying targets, level progression, circuit layouts, and obstacle placement.
+- Checked circuit and border geometry for self-intersections and barrier overlap with asphalt.
+- Verified that all five Level 3 obstacles were positioned on the racing line.
+- Verified that obstacles remained clear of asphalt edges and the player spawn position.
+- Checked that obstacles did not overlap one another.
 
-Failed:
-	- The border interfere with the track create blockage
+Learned:
+- AI is definitely changing the definition of vibe coding; however, there are also a lot of security and logic flaws that AI still falls short in addressing.
