@@ -83,19 +83,40 @@ function hasSelfIntersection(points) {
   return false;
 }
 
-function minimumNonAdjacentSeparation(points, minimumIndexGap) {
-  let minimum = Infinity;
-  for (let first = 0; first < points.length; first += 1) {
-    for (let second = first + 1; second < points.length; second += 1) {
-      const gap = Math.min(second - first, points.length - (second - first));
-      if (gap < minimumIndexGap) {
-        continue;
-      }
-      const distance = Math.hypot(
-        points[first].x - points[second].x,
-        points[first].y - points[second].y
+function pointToSegmentDistance(point, a, b) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const lengthSquared = dx * dx + dy * dy;
+  const projection = lengthSquared === 0
+    ? 0
+    : Math.max(
+        0,
+        Math.min(
+          1,
+          ((point.x - a.x) * dx + (point.y - a.y) * dy) / lengthSquared
+        )
       );
-      minimum = Math.min(minimum, distance);
+  return Math.hypot(
+    point.x - (a.x + dx * projection),
+    point.y - (a.y + dy * projection)
+  );
+}
+
+function minimumPathSeparation(firstPath, secondPath) {
+  let minimum = Infinity;
+  for (let first = 0; first < firstPath.length; first += 1) {
+    const a = firstPath[first];
+    const b = firstPath[(first + 1) % firstPath.length];
+    for (let second = 0; second < secondPath.length; second += 1) {
+      const c = secondPath[second];
+      const d = secondPath[(second + 1) % secondPath.length];
+      minimum = Math.min(
+        minimum,
+        pointToSegmentDistance(a, c, d),
+        pointToSegmentDistance(b, c, d),
+        pointToSegmentDistance(c, a, b),
+        pointToSegmentDistance(d, a, b)
+      );
     }
   }
   return minimum;
@@ -123,26 +144,6 @@ function hasPathIntersection(firstPath, secondPath) {
   return false;
 }
 
-function minimumCurveRadius(points) {
-  let minimum = Infinity;
-  for (let index = 0; index < points.length; index += 1) {
-    const a = points[(index - 1 + points.length) % points.length];
-    const b = points[index];
-    const c = points[(index + 1) % points.length];
-    const ab = Math.hypot(b.x - a.x, b.y - a.y);
-    const bc = Math.hypot(c.x - b.x, c.y - b.y);
-    const ca = Math.hypot(a.x - c.x, a.y - c.y);
-    const twiceArea = Math.abs(
-      (b.x - a.x) * (c.y - a.y) -
-      (b.y - a.y) * (c.x - a.x)
-    );
-    if (twiceArea > 0) {
-      minimum = Math.min(minimum, (ab * bc * ca) / (2 * twiceArea));
-    }
-  }
-  return minimum;
-}
-
 test("championship levels use distinct tracks and configured benchmarks", () => {
   assert.deepEqual(
     championshipLevels.map(({ level, difficulty, targetLapTimeSeconds }) => ({
@@ -151,14 +152,14 @@ test("championship levels use distinct tracks and configured benchmarks", () => 
       targetLapTimeSeconds
     })),
     [
-      { level: 1, difficulty: "Easy", targetLapTimeSeconds: 45 },
-      { level: 2, difficulty: "Medium", targetLapTimeSeconds: 38 },
-      { level: 3, difficulty: "Hard", targetLapTimeSeconds: 32 }
+      { level: 1, difficulty: "Easy", targetLapTimeSeconds: 50 },
+      { level: 2, difficulty: "Medium", targetLapTimeSeconds: 50 },
+      { level: 3, difficulty: "Hard", targetLapTimeSeconds: 40 }
     ]
   );
   assert.deepEqual(
     championshipLevels.map((level) => level.trackId),
-    ["apex-circuit", "harbor-street", "velocity-gp"]
+    ["prototype", "silverstone", "velocity-gp"]
   );
   assert.equal(new Set(championshipLevels.map((level) => level.trackId)).size, 3);
   const prototype = buildTrack(
@@ -204,69 +205,82 @@ test("each fictional circuit supports asphalt driving and a forward start-line c
   }
 });
 
-test("Harbor Street runoff and barriers do not cross or overlap nearby road sections", () => {
-  const harborTrack = championshipTracks.get("harbor-street");
-  for (const boundary of [
-    harborTrack.runoffEdges.left,
-    harborTrack.runoffEdges.right,
-    harborTrack.barrierEdges.left,
-    harborTrack.barrierEdges.right
-  ]) {
-    assert.equal(hasSelfIntersection(boundary), false);
+test("Silverstone is a dynamic spline with six chicanes and two 180-degree turns", () => {
+  const silverstone = championshipTracks.get("silverstone");
+  assert.equal(silverstone.obstacles.length, 7);
+  assert.equal(silverstone.chicaneCount, 6);
+  assert.equal(silverstone.hairpinCount, 2);
+  assert.equal(silverstone.centerline.length > 300, true);
+  assert.equal(isOnTrack(silverstone, silverstone.spawn), true);
+  for (const obstacle of silverstone.obstacles) {
+    assert.equal(isOnAsphalt(silverstone, obstacle), true);
   }
-
-  const clearance = minimumNonAdjacentSeparation(harborTrack.centerline, 17);
-  const boundaryEnvelope =
-    harborTrack.width +
-    2 * (harborTrack.runoffWidth + harborTrack.barrierWidth / 2);
-  assert.ok(clearance > boundaryEnvelope);
 });
 
-test("Velocity GP has sharp corners and hard barriers clear of asphalt", () => {
-  const velocityTrack = championshipTracks.get("velocity-gp");
-  const barriers = [
-    velocityTrack.barrierEdges.left,
-    velocityTrack.barrierEdges.right
-  ];
-  const outerBorders = [
-    velocityTrack.runoffEdges.left,
-    velocityTrack.runoffEdges.right,
-    ...barriers
-  ];
-  const asphaltEdges = [
-    velocityTrack.asphaltEdges.left,
-    velocityTrack.asphaltEdges.right
-  ];
-
-  for (const border of outerBorders) {
-    assert.equal(hasSelfIntersection(border), false);
-  }
-  assert.equal(hasPathIntersection(barriers[0], barriers[1]), false);
-
-  for (const barrier of barriers) {
-    assert.equal(barrier.some((point) => isOnAsphalt(velocityTrack, point)), false);
-    for (const asphaltEdge of asphaltEdges) {
-      assert.equal(hasPathIntersection(barrier, asphaltEdge), false);
+test("Velocity GP has more chicanes and a tighter footprint than Silverstone", () => {
+  const silverstone = championshipTracks.get("silverstone");
+  const velocity = championshipTracks.get("velocity-gp");
+  assert.equal(velocity.chicaneCount, 8);
+  assert.equal(velocity.chicaneCount > silverstone.chicaneCount, true);
+  assert.equal(velocity.hairpinCount, 2);
+  assert.equal(velocity.obstacles.length, 5);
+  for (const [index, obstacle] of velocity.obstacles.entries()) {
+    assert.equal(isOnAsphalt(velocity, obstacle), true);
+    for (const asphaltEdge of [
+      velocity.asphaltEdges.left,
+      velocity.asphaltEdges.right
+    ]) {
+      assert.ok(
+        minimumPathSeparation([obstacle], asphaltEdge) > obstacle.radius
+      );
+    }
+    assert.ok(
+      Math.hypot(
+        obstacle.x - velocity.spawn.x,
+        obstacle.y - velocity.spawn.y
+      ) > 20
+    );
+    for (const other of velocity.obstacles.slice(index + 1)) {
+      assert.ok(
+        Math.hypot(obstacle.x - other.x, obstacle.y - other.y) >
+          obstacle.radius + other.radius
+      );
     }
   }
+  const ySpan = (track) => {
+    const values = track.centerline.map((point) => point.y);
+    return Math.max(...values) - Math.min(...values);
+  };
+  assert.equal(ySpan(velocity) < ySpan(silverstone), true);
+  assert.equal(isOnTrack(velocity, velocity.spawn), true);
+});
 
-  const hardBorderOffset =
-    velocityTrack.width / 2 +
-    velocityTrack.runoffWidth +
-    velocityTrack.barrierWidth / 2;
-  const cornerRadius = minimumCurveRadius(velocityTrack.centerline);
-  assert.ok(cornerRadius > hardBorderOffset);
-  assert.ok(cornerRadius < 30);
+test("hard borders stay clear of asphalt through chicanes and hairpins", () => {
+  for (const track of championshipTracks.values()) {
+    const asphaltEdges = [
+      track.asphaltEdges.left,
+      track.asphaltEdges.right
+    ];
+    const hardBorders = [
+      track.barrierEdges.left,
+      track.barrierEdges.right
+    ];
 
-  const boundaryEnvelope = hardBorderOffset * 2;
-  assert.ok(
-    minimumNonAdjacentSeparation(velocityTrack.centerline, 17) >
-      boundaryEnvelope
-  );
+    for (const border of hardBorders) {
+      assert.equal(hasSelfIntersection(border), false);
+      assert.equal(border.some((point) => isOnAsphalt(track, point)), false);
+      for (const asphaltEdge of asphaltEdges) {
+        assert.equal(hasPathIntersection(border, asphaltEdge), false);
+        assert.ok(
+          minimumPathSeparation(border, asphaltEdge) > track.barrierWidth / 2
+        );
+      }
+    }
+  }
 });
 
 test("qualifying appears immediately and can continue until attempts run out", () => {
-  const session = createQualifyingSession(track, 45);
+  const session = createQualifyingSession(track, 50);
   session.handleCrossing(0);
   session.handleCrossing(44000);
 
@@ -297,10 +311,10 @@ test("qualifying unlocks the next level immediately", () => {
 });
 
 test("using all five attempts at the exact target time fails", () => {
-  const session = createQualifyingSession(track, 45);
+  const session = createQualifyingSession(track, 50);
   session.handleCrossing(0);
 
-  for (const lapEnd of [45000, 90000, 135000, 180000, 225000]) {
+  for (const lapEnd of [50000, 100000, 150000, 200000, 250000]) {
     session.handleCrossing(lapEnd);
   }
 
@@ -323,11 +337,12 @@ test("Next Round loads the next track and resets the qualifying session", () => 
   assert.equal(game.currentLevel, 2);
   assert.equal(game.unlockedLevel, 2);
   assert.notStrictEqual(game.track, initialTrack);
-  assert.equal(game.track.id, "harbor-street");
+  assert.equal(game.track.id, "silverstone");
   const levelTwoTrack = game.track;
 
   const levelTwo = game.qualifying.snapshot(0);
-  assert.equal(levelTwo.targetLapTimeMs, 38000);
+  assert.equal(levelTwo.targetLapTimeMs, 50000);
+  assert.equal(game.tutorialOpen, true);
   assert.equal(levelTwo.attemptsRemaining, 5);
   assert.equal(levelTwo.fastestValidLapMs, null);
   assert.equal(levelTwo.validLaps, 0);
@@ -368,8 +383,8 @@ test("Level 3 qualification displays victory instead of advancing further", () =
 
   assert.equal(game.currentLevel, 3);
   assert.equal(game.track.id, "velocity-gp");
-  assert.equal(game.qualifying.snapshot(0).targetLapTimeMs, 32000);
-  qualify(game, 31000);
+  assert.equal(game.qualifying.snapshot(0).targetLapTimeMs, 40000);
+  qualify(game, 39000);
 
   assert.equal(game.advanceLevel(), true);
   assert.equal(game.currentLevel, 3);

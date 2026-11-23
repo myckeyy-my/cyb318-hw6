@@ -155,9 +155,9 @@ rules are identical across levels.
 
 | Level | Track | Difficulty | Target lap time |
 | --- | --- | --- | --- |
-| Level 1 | Apex GP Circuit | Easy | 45.000 seconds |
-| Level 2 | Harbor Street Circuit | Medium | 38.000 seconds |
-| Level 3 | Velocity GP Circuit | Hard | 32.000 seconds |
+| Level 1 | Existing Test Track | Easy | 50.000 seconds |
+| Level 2 | Silverstone | Medium | 50.000 seconds |
+| Level 3 | Existing Test Track | Hard | 32.000 seconds |
 
 Keep the qualifying benchmarks in centralized level configuration rather
 than in the track geometry data.
@@ -183,8 +183,8 @@ from the player's previous performance.
 
   --------- -----------------
 
-  Level 1      45.000 seconds
-  Level 2      38.000 seconds
+  Level 1      50.000 seconds
+  Level 2      50.000 seconds
   Level 3      32.000 seconds
 
 These are initial design placeholders, not final calibrated times.
@@ -503,24 +503,3 @@ are met.
 - [ ] Significant AI contributions are documented.
 - [ ] The student can discuss the strengths and limitations of vibe
     coding.
-
-## Final Project Scope
-
-**Apex Rush -- F1 Arcade Qualifying** is a three-level, top-down
-arcade racing game featuring: - Top-down Formula-style racing. - Five
-timed qualifying attempts per level. - Fixed benchmark lap times. -
-Collision-based lap invalidation. - One shared test circuit with
-progressively shorter qualifying targets. - Sequential championship
-progression. - Browser-based
-deployment through GitHub Pages.
-
-**Development constraint:** Five days. Prioritize working mechanics,
-accurate timing, and reliable gameplay over decorative features.
-
-**Professional recommendation:** Treat the first square circuit as your
-technical prototype. Do not start recreating famous F1 circuits until
-the car physics, camera rotation, collision detection, and lap-timing
-system work reliably. Those four systems are the technical foundation of
-this entire game. Also, confirm with your instructor that
-Python-generated track data or configuration is sufficient for the
-Python requirement before committing to the architecture.

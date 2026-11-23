@@ -70,8 +70,9 @@ function fillKerbs(ctx, kerbs) {
 }
 
 function drawBarriers(ctx, track) {
-  ctx.lineJoin = "round";
-  ctx.lineCap = "round";
+  ctx.lineJoin = "miter";
+  ctx.lineCap = "butt";
+  ctx.miterLimit = 3;
   ctx.strokeStyle = "#272a30";
   ctx.lineWidth = track.barrierWidth;
   strokeLoop(ctx, track.barrierEdges.left);

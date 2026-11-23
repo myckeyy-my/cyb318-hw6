@@ -2,7 +2,7 @@
 // Collision and physics stay in world meters. The camera is applied only while drawing.
 
 import { config } from "./config.js";
-import { readInput } from "./input.js";
+import { clearInput, readInput } from "./input.js";
 import { createPlayer, getWheelPositions, updatePlayer } from "./player.js";
 import { createCamera, updateCamera, applyCamera } from "./camera.js";
 import { resolveCollisions } from "./collision.js";
@@ -40,6 +40,7 @@ export class Game {
       this.track,
       getChampionshipLevel(this.currentLevel).targetLapTimeSeconds
     );
+    this.tutorialOpen = this.currentLevel <= 2;
     this.view = { width: 1, height: 1, dpr: 1 };
     this.lastTime = 0;
     this.resize();
@@ -74,6 +75,14 @@ export class Game {
   }
 
   update(dt) {
+    if (this.tutorialOpen) {
+      const tutorialResult = this.qualifying.snapshot(performance.now());
+      if (tutorialResult.qualified) {
+        this.unlockNextLevel();
+      }
+      this.hooks.onUpdate(this.player, tutorialResult);
+      return;
+    }
     const now = performance.now();
     const currentResult = this.qualifying.snapshot(now);
     if (currentResult.qualified) {
@@ -139,6 +148,8 @@ export class Game {
       this.track,
       getChampionshipLevel(this.currentLevel).targetLapTimeSeconds
     );
+    this.tutorialOpen = this.currentLevel <= 2;
+    clearInput();
   }
 
   finishQualifying() {
@@ -199,6 +210,11 @@ export class Game {
       this.player,
       this.qualifying.snapshot(performance.now())
     );
+  }
+
+  closeTutorial() {
+    this.tutorialOpen = false;
+    clearInput();
   }
 
   unlockNextLevel() {

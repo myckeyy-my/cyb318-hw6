@@ -32,10 +32,49 @@ const resultsTargetEl = document.querySelector("#results-target");
 const resultsBestEl = document.querySelector("#results-best");
 const resultsContinueButton = document.querySelector("#results-continue");
 const resultsRetryButton = document.querySelector("#results-retry");
+const tutorialEl = document.querySelector("#tutorial");
+const tutorialTitleEl = document.querySelector("#tutorial-title");
+const tutorialKickerEl = document.querySelector("#tutorial-kicker");
+const tutorialBadgeEl = document.querySelector("#tutorial-badge");
+const tutorialContinueButton = document.querySelector("#tutorial-continue");
+const obstacleCardEl = document.querySelector("#obstacle-card");
+const objectiveLevelEl = document.querySelector("#objective-level");
+const objectiveTrackEl = document.querySelector("#objective-track");
+const objectiveTargetEl = document.querySelector("#objective-target");
+const objectiveTextEl = document.querySelector("#objective-text");
 
 let game = null;
 
+function showTutorial(levelNumber) {
+  tutorialEl.hidden = false;
+  tutorialBadgeEl.textContent = `L${levelNumber}`;
+  obstacleCardEl.hidden = levelNumber !== 2;
+
+  if (levelNumber === 1) {
+    tutorialKickerEl.textContent = "HOW TO PLAY — LEVEL 1";
+    tutorialTitleEl.textContent = "WELCOME TO APEX RUSH";
+    objectiveLevelEl.textContent = "LEVEL 1 — QUALIFYING";
+    objectiveTrackEl.textContent = "TRACK: EXISTING TEST TRACK";
+    objectiveTargetEl.textContent = "50.000 s";
+    objectiveTextEl.innerHTML =
+      "<strong>OBJECTIVE:</strong> Complete a valid lap in less than 50 seconds to qualify for Level 2.";
+  } else {
+    tutorialKickerEl.textContent = "MASTER THE CHICANES. ATTACK THE HAIRPINS.";
+    tutorialTitleEl.textContent = "LEVEL 2 — TECHNICAL CIRCUIT";
+    objectiveLevelEl.textContent = "LEVEL 2 — QUALIFYING";
+    objectiveTrackEl.textContent = "TRACK: SILVERSTONE";
+    objectiveTargetEl.textContent = "50.000 s";
+    objectiveTextEl.innerHTML =
+      "<strong>OBJECTIVE:</strong> Complete a valid lap in less than 50 seconds by navigating the chicanes and 180-degree turns.";
+  }
+}
+
 function updateHud(player, qualifying) {
+  if (game.tutorialOpen) {
+    showTutorial(game.currentLevel);
+  } else {
+    tutorialEl.hidden = true;
+  }
   if (game.championshipWon) {
     showChampionshipVictory();
     return;
@@ -125,6 +164,11 @@ Promise.all([
         showChampionshipVictory();
       }
     }, createCarSprites(carImage));
+    tutorialContinueButton.addEventListener("click", () => {
+      game.closeTutorial();
+      tutorialEl.hidden = true;
+      canvas.focus();
+    });
     restartButton.addEventListener("click", () => {
       game.restart();
       canvas.focus();

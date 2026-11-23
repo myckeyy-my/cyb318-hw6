@@ -124,14 +124,42 @@ function offsetWalls(center, width) {
 
   for (let i = 0; i < count; i += 1) {
     const prev = center[(i - 1 + count) % count];
+    const point = center[i];
     const next = center[(i + 1) % count];
-    let tx = next.x - prev.x;
-    let ty = next.y - prev.y;
-    const length = Math.hypot(tx, ty) || 1;
-    tx /= length;
-    ty /= length;
-    left.push({ x: center[i].x + -ty * half, y: center[i].y + tx * half });
-    right.push({ x: center[i].x - -ty * half, y: center[i].y - tx * half });
+    const incomingLength = Math.hypot(point.x - prev.x, point.y - prev.y) || 1;
+    const outgoingLength = Math.hypot(next.x - point.x, next.y - point.y) || 1;
+    const incoming = {
+      x: (point.x - prev.x) / incomingLength,
+      y: (point.y - prev.y) / incomingLength
+    };
+    const outgoing = {
+      x: (next.x - point.x) / outgoingLength,
+      y: (next.y - point.y) / outgoingLength
+    };
+
+    function offset(sign) {
+      const before = { x: -incoming.y * sign, y: incoming.x * sign };
+      const after = { x: -outgoing.y * sign, y: outgoing.x * sign };
+      let mx = before.x + after.x;
+      let my = before.y + after.y;
+      const miterLength = Math.hypot(mx, my);
+
+      if (miterLength < 1e-6) {
+        return { x: point.x + after.x * half, y: point.y + after.y * half };
+      }
+
+      mx /= miterLength;
+      my /= miterLength;
+      const projection = mx * after.x + my * after.y;
+      const distance = Math.min(half / Math.max(projection, 1e-6), half * 4);
+      return {
+        x: point.x + mx * distance,
+        y: point.y + my * distance
+      };
+    }
+
+    left.push(offset(1));
+    right.push(offset(-1));
   }
 
   return { left, right };
@@ -370,6 +398,14 @@ function validateSpec(spec) {
   if (spec.obstacles !== undefined && !Array.isArray(spec.obstacles)) {
     throw new Error(`Track "${spec.id}" has an invalid obstacle list.`);
   }
+  if (spec.chicaneCount !== undefined &&
+      (!Number.isInteger(spec.chicaneCount) || spec.chicaneCount < 0)) {
+    throw new Error(`Track "${spec.id}" has an invalid chicane count.`);
+  }
+  if (spec.hairpinCount !== undefined &&
+      (!Number.isInteger(spec.hairpinCount) || spec.hairpinCount < 0)) {
+    throw new Error(`Track "${spec.id}" has an invalid hairpin count.`);
+  }
   if (
     spec.obstacles &&
     spec.obstacles.some(
@@ -419,6 +455,8 @@ export function buildTrack(spec) {
     id: spec.id,
     name: spec.name,
     width: spec.width,
+    chicaneCount: spec.chicaneCount ?? 0,
+    hairpinCount: spec.hairpinCount ?? 0,
     runoffWidth,
     barrierWidth,
     kerbWidth,

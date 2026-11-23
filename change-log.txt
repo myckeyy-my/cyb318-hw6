@@ -111,5 +111,52 @@ Tested:
 	- Sequential level transitions, benchmark selection, session resets, and Level 3 victory.
 	- Automatic success and failure after five attempts.
 	- Browser rendering benchmark for generated kerbs and track geometry.
+Failed:
+	- The border interfere with the track create blockage
+
+Date: 11.21.2026
+Goal:
+	- Fix the layout of track level 2.
+	- Fix the border interfere with the track create blockage.
+	- 
+Prompt:
+	- The hard border blocked the track. Make sure no hard border is ever on the black racing track, merge hard border together if needed, for chicanes and sharp cornor, mege the border together like a triangle or A shape
+AI Implemented:
+
+Tested:
+
+Failed:
+	- The border interfere with the track create blockage
+
+Additional changes made on 11.22.2026
+Goal:
+	- Update championship track assignments and qualifying targets.
+	- Add introductory tutorials and make Level 2 and Level 3 more challenging.
+AI Implemented:
+	- Assigned the existing Test Track to Level 1 and Silverstone to Level 2; set both targets to 50 seconds.
+	- Kept Level 3 on its dedicated Velocity GP circuit and raised its target to 40 seconds.
+	- Added Level 1 and Level 2 introductory screens with gameplay paused until the player continues.
+	- Redesigned Silverstone with six chicanes and two hairpins, and added seven orange road obstacles.
+	- Rebuilt Velocity GP with eight chicanes and two hairpins, and added five orange obstacles at randomized track positions.
+	- Joined hard-border corners and adjusted track boundaries to keep barriers clear of the asphalt.
+Tested:
+	- Updated championship tests for track assignments, targets, progression, circuit layouts, and obstacle placements.
+	- Checked circuit and border geometry for self-intersections and barrier overlap with asphalt.
+	- Verified Level 3's five obstacles are on the racing line, clear of the asphalt edges and spawn, and do not overlap one another.
+	- Confirmed the track data is valid JSON and the changes pass git diff whitespace checks.
 Unverified:
-	- Manual full-lap keyboard driving on every circuit.
+	- The JavaScript test suite could not be run because Node.js is unavailable in the environment.
+	- Manual browser playtesting of the tutorials and obstacle challenges.
+
+Date: 11.22.2026
+Goal:
+	- Design track for level 3
+	- 
+Prompt:
+	- Re create the track for level 3 to be much more challenging compared to track in level 2 and increase the time objective of track 3 to 40 seconds.
+AI Implemented:
+
+Tested:
+
+Failed:
+	- The border interfere with the track create blockage

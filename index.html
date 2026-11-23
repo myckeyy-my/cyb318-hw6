@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Apex Rush</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="elements/game logo.png" type="image/x-icon">   
 </head>
 <body>
   <div id="app">
@@ -19,12 +20,104 @@
         <div class="hud-row"><span id="lap">LAP 0 / 5</span><span id="speed">0 km/h</span></div>
         <div class="hud-row"><span>CURRENT</span><span id="current-time">--:---</span></div>
         <div class="hud-row"><span>BEST</span><span id="best-time">--:---</span></div>
-        <div class="hud-row"><span>TARGET</span><span id="target-time">00:45.000</span></div>
+        <div class="hud-row"><span>TARGET</span><span id="target-time">00:50.000</span></div>
         <div class="hud-row"><span>VALID / INVALID</span><span id="lap-counts">0 / 0</span></div>
         <p id="status" role="status" aria-live="polite">READY</p>
         <button id="restart" type="button">RESTART SESSION</button>
         <button id="next-round" class="game-button" type="button" hidden>NEXT ROUND</button>
       </div>
+      <section id="tutorial" class="tutorial-screen" role="dialog" aria-modal="true" aria-labelledby="tutorial-title" hidden>
+        <div class="tutorial-card">
+          <header class="tutorial-header">
+            <div>
+              <p id="tutorial-kicker">HOW TO PLAY — LEVEL 1</p>
+              <h2 id="tutorial-title">WELCOME TO APEX RUSH</h2>
+            </div>
+            <div id="tutorial-badge" class="tutorial-badge">L1</div>
+          </header>
+
+          <div class="tutorial-grid">
+            <article id="controls-card" class="tutorial-card-section">
+              <h3>VEHICLE CONTROLS</h3>
+              <div class="control-grid">
+                <div class="control-item">
+                  <div class="key-row"><kbd>←</kbd></div>
+                  <span>Steer left</span>
+                </div>
+                <div class="control-item">
+                  <div class="key-row"><kbd>→</kbd></div>
+                  <span>Steer right</span>
+                </div>
+                <div class="control-item">
+                  <div class="key-row"><kbd class="wide-key">SPACE</kbd></div>
+                  <span>Accelerate</span>
+                </div>
+                <div class="control-item">
+                  <div class="key-row"><kbd>D</kbd></div>
+                  <span>Brake</span>
+                </div>
+              </div>
+            </article>
+
+            <article id="qualifying-card" class="tutorial-card-section">
+              <h3>HOW QUALIFYING WORKS</h3>
+              <ul>
+                <li>Each level provides five attempts.</li>
+                <li>Complete valid laps and keep the fastest time.</li>
+                <li>Beat the target to qualify.</li>
+                <li>After qualifying, improve your time or choose <strong>Next Round</strong>.</li>
+              </ul>
+            </article>
+
+            <article id="laps-card" class="tutorial-card-section">
+              <h3>VALID / INVALID LAPS</h3>
+              <div class="lap-status-grid">
+                <div class="lap-status valid">
+                  <strong>VALID LAP</strong>
+                  <p>Full lap, no barrier or obstacle hit, and all four wheels stay within the permitted surface.</p>
+                </div>
+                <div class="lap-status invalid">
+                  <strong>INVALID LAP</strong>
+                  <p>Obstacle/barrier hit or all four wheels leave the track. The lap is discarded and one attempt is consumed.</p>
+                </div>
+              </div>
+              <p class="lap-example">Target 50.000 s · Valid 52.000 s = valid lap, but <strong>not qualified</strong>. A lap must be strictly faster.</p>
+            </article>
+
+            <article id="obstacle-card" class="tutorial-card-section obstacle-card" hidden>
+              <h3>SILVERSTONE GP — CIRCUIT CHALLENGE</h3>
+              <div class="obstacle-lesson">
+                <div class="road-illustration" aria-label="Technical race circuit with a chicane and hairpin">
+                  <div class="road-lane"></div>
+                  <div class="illustration-car">F1</div>
+                  <div class="yellow-barrier">CHICANE</div>
+                  <div class="safe-path">BRAKE · TURN · ACCELERATE</div>
+                  <div class="warning-path">HAIRPIN = 180°</div>
+                </div>
+                <ul>
+                  <li>Navigate six fast, alternating chicane sequences.</li>
+                  <li>Brake early and turn tightly through two 180-degree hairpins.</li>
+                  <li>The kerbs and asphalt are free of road blockages.</li>
+                </ul>
+              </div>
+            </article>
+
+            <article class="tutorial-card-section objective-card">
+              <div>
+                <p id="objective-level">LEVEL 1 — QUALIFYING</p>
+                <h3 id="objective-track">TRACK: EXISTING TEST TRACK</h3>
+              </div>
+              <div class="objective-stats">
+                <span>Target <strong id="objective-target">50.000 s</strong></span>
+                <span>Attempts <strong>5</strong></span>
+              </div>
+              <p id="objective-text"><strong>OBJECTIVE:</strong> Complete a valid lap in less than 50 seconds to qualify for Level 2.</p>
+            </article>
+          </div>
+
+          <button id="tutorial-continue" class="tutorial-continue" type="button">CONTINUE</button>
+        </div>
+      </section>
       <section id="results" class="results-screen" role="dialog" aria-modal="true" aria-labelledby="results-title" hidden>
         <div class="results-card">
           <h2 id="results-title"></h2>

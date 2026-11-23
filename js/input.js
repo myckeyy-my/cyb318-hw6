@@ -29,3 +29,7 @@ export function readInput() {
     brake: held.has("KeyD")
   };
 }
+
+export function clearInput() {
+  held.clear();
+}
