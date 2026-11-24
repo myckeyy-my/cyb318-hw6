@@ -38,7 +38,9 @@ export function createQualifyingSession(track, targetLapTimeSeconds) {
     fastestValidLapMs: null,
     targetLapTimeMs: targetLapTimeSeconds * 1000,
     lastLapTimeMs: null,
-    lapStartedAt: null
+    lapStartedAt: null,
+    wrongWayRecoveryRequired: false,
+    wrongWayRecoveryCrossings: 0
   };
 
   function startLap(now, status) {
@@ -49,6 +51,8 @@ export function createQualifyingSession(track, targetLapTimeSeconds) {
       return false;
     }
 
+    session.wrongWayRecoveryRequired = false;
+    session.wrongWayRecoveryCrossings = 0;
     session.state = qualifyingStates.LAP_RUNNING;
     session.currentAttempt = session.attemptsCompleted + 1;
     session.lapStartedAt = now;
@@ -78,6 +82,21 @@ export function createQualifyingSession(track, targetLapTimeSeconds) {
   function handleCrossing(now) {
     if (session.state === qualifyingStates.SESSION_COMPLETED) {
       return false;
+    }
+
+    if (
+      session.state === qualifyingStates.LAP_RUNNING &&
+      session.wrongWayRecoveryRequired
+    ) {
+      session.wrongWayRecoveryCrossings += 1;
+      if (session.wrongWayRecoveryCrossings < 2) {
+        session.statusMessage = "RECOVERY: ONE MORE FORWARD CROSSING REQUIRED";
+        session.statusMessageUntil = now + 2000;
+        return false;
+      }
+
+      session.wrongWayRecoveryRequired = false;
+      session.wrongWayRecoveryCrossings = 0;
     }
 
     if (
@@ -114,6 +133,18 @@ export function createQualifyingSession(track, targetLapTimeSeconds) {
     return true;
   }
 
+  function handleWrongWayCrossing(now) {
+    if (session.state !== qualifyingStates.LAP_RUNNING) {
+      return false;
+    }
+
+    session.wrongWayRecoveryRequired = true;
+    session.wrongWayRecoveryCrossings = 0;
+    session.statusMessage = "WRONG-WAY CROSSING: TWO FORWARD CROSSINGS REQUIRED";
+    session.statusMessageUntil = now + 2000;
+    return true;
+  }
+
   function handleInvalidation(now, status) {
     if (session.state !== qualifyingStates.LAP_RUNNING) {
       return false;
@@ -121,6 +152,8 @@ export function createQualifyingSession(track, targetLapTimeSeconds) {
 
     session.lastLapTimeMs = Math.max(0, now - session.lapStartedAt);
     session.lapStartedAt = null;
+    session.wrongWayRecoveryRequired = false;
+    session.wrongWayRecoveryCrossings = 0;
     session.invalidLaps += 1;
     consumeAttempt();
 
@@ -175,7 +208,9 @@ export function createQualifyingSession(track, targetLapTimeSeconds) {
       invalidLaps: session.invalidLaps,
       fastestValidLapMs: session.fastestValidLapMs,
       targetLapTimeMs: session.targetLapTimeMs,
-      currentLapTimeMs
+      currentLapTimeMs,
+      wrongWayRecoveryRequired: session.wrongWayRecoveryRequired,
+      wrongWayRecoveryCrossings: session.wrongWayRecoveryCrossings
     };
   }
 
@@ -204,10 +239,13 @@ export function createQualifyingSession(track, targetLapTimeSeconds) {
     session.fastestValidLapMs = null;
     session.lastLapTimeMs = null;
     session.lapStartedAt = null;
+    session.wrongWayRecoveryRequired = false;
+    session.wrongWayRecoveryCrossings = 0;
   }
 
   return {
     handleCrossing,
+    handleWrongWayCrossing,
     handleCollision,
     handleTrackLimitViolation,
     snapshot,

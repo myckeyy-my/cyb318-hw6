@@ -115,8 +115,13 @@ export class Game {
       if (allWheelsOutside) {
         this.qualifying.handleTrackLimitViolation(now);
         synchronizeLapDetector(this.lapDetector, this.player);
-      } else if (updateLapDetector(this.lapDetector, this.player)) {
-        this.qualifying.handleCrossing(now);
+      } else {
+        const crossing = updateLapDetector(this.lapDetector, this.player);
+        if (crossing === "reverse") {
+          this.qualifying.handleWrongWayCrossing(now);
+        } else if (crossing === "forward") {
+          this.qualifying.handleCrossing(now);
+        }
       }
     }
     updateCamera(this.camera, this.player.heading, config.cameraTurnRate, dt);

@@ -184,6 +184,53 @@ test("championship levels use distinct tracks and configured benchmarks", () => 
   );
 });
 
+test("track validation bounds coordinates, point counts, and geometry work", () => {
+  const silverstoneSpec = () =>
+    JSON.parse(JSON.stringify(
+      trackData.tracks.find((spec) => spec.id === "silverstone")
+    ));
+
+  const oversizedCoordinate = silverstoneSpec();
+  oversizedCoordinate.points[0].x = 1001;
+  assert.throws(
+    () => buildTrack(oversizedCoordinate),
+    /invalid spline centerline/
+  );
+
+  const tooManyPoints = silverstoneSpec();
+  tooManyPoints.points = Array.from({ length: 129 }, (_, index) => ({
+    x: index,
+    y: 0
+  }));
+  assert.throws(
+    () => buildTrack(tooManyPoints),
+    /invalid spline centerline/
+  );
+
+  const excessiveGeometry = silverstoneSpec();
+  excessiveGeometry.sampleSpacing = 0.25;
+  excessiveGeometry.points = Array.from({ length: 128 }, (_, index) => {
+    const angle = (index / 128) * Math.PI * 2;
+    return { x: Math.cos(angle) * 900, y: Math.sin(angle) * 900 };
+  });
+  assert.throws(
+    () => buildTrack(excessiveGeometry),
+    /too many centerline samples/
+  );
+
+  const invalidSampling = trackData.tracks.find(
+    (spec) => spec.id === "prototype"
+  );
+  assert.throws(
+    () => buildTrack({ ...invalidSampling, straight: 1001 }),
+    /invalid centerline dimensions/
+  );
+  assert.throws(
+    () => buildTrack({ ...invalidSampling, sampleSpacing: 0.1 }),
+    /invalid centerline dimensions/
+  );
+});
+
 test("each fictional circuit supports asphalt driving and a forward start-line crossing", () => {
   for (const levelTrack of championshipTracks.values()) {
     const detector = createLapDetector(levelTrack, levelTrack.spawn);
@@ -198,11 +245,23 @@ test("each fictional circuit supports asphalt driving and a forward start-line c
       true
     );
     assert.equal(detector.armed, true);
-    assert.equal(updateLapDetector(detector, nextAfterLine), true);
+    assert.equal(updateLapDetector(detector, nextAfterLine), "forward");
     assert.equal(hasSelfIntersection(levelTrack.centerline), false);
     assert.equal(hasSelfIntersection(levelTrack.asphaltEdges.left), false);
     assert.equal(hasSelfIntersection(levelTrack.asphaltEdges.right), false);
   }
+});
+
+test("lap detector reports reverse start-line crossings", () => {
+  const detector = createLapDetector(track, track.spawn);
+  const alongNormal = (distance) => ({
+    x: detector.center.x + detector.normal.x * distance,
+    y: detector.center.y + detector.normal.y * distance
+  });
+
+  assert.equal(updateLapDetector(detector, alongNormal(5)), "forward");
+  assert.equal(updateLapDetector(detector, alongNormal(-5)), "reverse");
+  assert.equal(updateLapDetector(detector, alongNormal(5)), "forward");
 });
 
 test("Silverstone is a dynamic spline with six chicanes and two 180-degree turns", () => {
@@ -298,6 +357,40 @@ test("qualifying appears immediately and can continue until attempts run out", (
   assert.equal(result.state, qualifyingStates.SESSION_COMPLETED);
   assert.equal(result.result, "QUALIFIED");
   assert.equal(result.attemptsRemaining, 0);
+});
+
+test("wrong-way crossing requires two forward crossings before lap completion", () => {
+  const session = createQualifyingSession(track, 50);
+  session.handleCrossing(0);
+  assert.equal(session.handleWrongWayCrossing(1000), true);
+
+  assert.equal(session.handleCrossing(20000), false);
+  let result = session.snapshot(20000);
+  assert.equal(result.state, qualifyingStates.LAP_RUNNING);
+  assert.equal(result.validLaps, 0);
+  assert.equal(result.wrongWayRecoveryRequired, true);
+  assert.equal(result.wrongWayRecoveryCrossings, 1);
+
+  assert.equal(session.handleCrossing(45000), true);
+  result = session.snapshot(45000);
+  assert.equal(result.state, qualifyingStates.LAP_RUNNING);
+  assert.equal(result.validLaps, 1);
+  assert.equal(result.fastestValidLapMs, 45000);
+  assert.equal(result.qualified, true);
+  assert.equal(result.wrongWayRecoveryRequired, false);
+});
+
+test("another wrong-way crossing restarts forward-crossing recovery", () => {
+  const session = createQualifyingSession(track, 50);
+  session.handleCrossing(0);
+  session.handleWrongWayCrossing(1000);
+  session.handleCrossing(20000);
+  session.handleWrongWayCrossing(21000);
+
+  const result = session.snapshot(21000);
+  assert.equal(result.wrongWayRecoveryRequired, true);
+  assert.equal(result.wrongWayRecoveryCrossings, 0);
+  assert.equal(result.validLaps, 0);
 });
 
 test("qualifying unlocks the next level immediately", () => {

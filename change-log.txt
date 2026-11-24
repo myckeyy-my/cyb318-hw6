@@ -194,3 +194,60 @@ Tested:
 
 Learned:
 - AI is definitely changing the definition of vibe coding; however, there are also a lot of security and logic flaws that AI still falls short in addressing.
+
+-------------------------------------------------------------------------
+
+Date: 11/23/2026
+
+Goal:
+- Troubleshoot the issue of player can short cut the track by passing finish line in reverse direction and passing it again.
+
+Prompt:
+- Right now, the player can cross the finish line to start their lap and then turn around crossing it from the other side to get behind the finish line before crossing the line again to complete their lap and short cut the entire track. You job as a SecDevOps engineer is to prevent this cheating behavior by implementing some form of check if the player crosses the finish line from the wrong side and raise a flag that prevent them from complete the lap until they have crosses the finish line on the correct side at least twice. You are allowed to edit the code. Explain the fix(es) and your reasoning for each steps taken at the end.
+
+AI Implemented:
+- lap-detection.js now reports forward and reverse crossings when the car actually crosses within the finish gate.
+- game.js sends those events to qualifying logic.
+- qualifying.js flags a reverse crossing during a running lap. The first subsequent forward crossing cannot complete the lap; the second can. Another reverse crossing resets the count. The HUD status reports the recovery requirement.
+- championship.test.js now covers crossing direction, recovery, and counter reset.
+
+Result:
+- The lap detector now recognizes both forward and reverse crossings of the finish gate, and the qualifying logic tracks wrong-way recovery. This fixes the shortcut by preventing a lap from completing until the player makes two forward crossings after a reverse crossing. If the player crosses backward during an active lap, the game flags wrong-way recovery. The first subsequent forward crossing only advances recovery; the second may complete the lap. Another backward crossing resets recovery, requiring two forward crossings again.
+
+-------------------------------------------------------------------------
+
+Date: 11/23/2026
+
+Goal:
+- Bound track configuration inputs to prevent excessive geometry generation and distorted tracks.
+
+Prompt:
+- Fix the lack of resource bounds for track coordinates, point counts, and geometry-generation work.
+
+AI Implemented:
+- Added limits for track dimensions and coordinates, sample spacing, spline control points, obstacle counts, track counts, and generated centerline samples.
+- Added validation tests for oversized coordinates, excessive spline points, invalid sample spacing, and excessive geometry work.
+
+Result:
+- Track specifications exceeding the configured bounds are rejected before centerline geometry is generated.
+
+-------------------------------------------------------------------------
+
+Date: 11/23/2026
+
+Goal:
+- Add a Content Security Policy to restrict browser-loaded resources and provide defense in depth against script injection.
+
+Prompt:
+- Implement the recommended CSP and append today's changes using the existing changelog categories without changing prior entries.
+
+AI Implemented:
+- Added a CSP meta policy allowing same-origin scripts, styles, images, and connections; disabled object/embed content and restricted the base URL.
+- Kept the policy before resource links so it applies to the page's subsequent loads.
+
+Tested:
+- Reviewed the page resource references and found only same-origin stylesheet, image, script, and track-data requests.
+- No browser-enforcement or automated game tests were run.
+
+Result:
+- The browser now applies the policy to resources loaded after the meta element. The `frame-ancestors` directive cannot be enforced through a meta policy and still requires an HTTP response header from the hosting platform.

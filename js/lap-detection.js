@@ -59,19 +59,17 @@ export function synchronizeLapDetector(detector, position) {
 export function updateLapDetector(detector, position) {
   const distance = signedDistance(position, detector);
 
-  if (!detector.armed) {
-    if (distance < -detector.rearmDistance) {
-      detector.armed = true;
-    }
-    savePosition(detector, position);
-    return false;
+  if (!detector.armed && distance < -detector.rearmDistance) {
+    detector.armed = true;
   }
 
   const crossedForward =
     detector.previousDistance < 0 && distance >= 0;
-  if (!crossedForward) {
+  const crossedReverse =
+    detector.previousDistance > 0 && distance <= 0;
+  if (!crossedForward && !crossedReverse) {
     savePosition(detector, position);
-    return false;
+    return null;
   }
 
   const fraction =
@@ -88,9 +86,16 @@ export function updateLapDetector(detector, position) {
 
   savePosition(detector, position);
   if (!isWithinGate(crossing, detector)) {
-    return false;
+    return null;
+  }
+
+  if (crossedReverse) {
+    return "reverse";
+  }
+  if (!detector.armed) {
+    return null;
   }
 
   detector.armed = false;
-  return true;
+  return "forward";
 }

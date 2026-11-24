@@ -4,6 +4,85 @@
 import { config } from "./config.js";
 
 const GEOMETRY_EPSILON = 1e-7;
+const MAX_TRACK_COORDINATE = 1000;
+const MAX_TRACK_DIMENSION = 1000;
+const MIN_SAMPLE_SPACING = 0.25;
+const MAX_SAMPLE_SPACING = 100;
+const MAX_SPLINE_POINTS = 128;
+const MAX_CENTERLINE_SAMPLES = 8192;
+const MAX_OBSTACLES = 256;
+const MAX_TRACKS = 32;
+const MAX_TRACK_DATA_BYTES = 1_000_000;
+
+function isBoundedNumber(value, min, max) {
+  return Number.isFinite(value) && value >= min && value <= max;
+}
+
+function getCenterlineSampleCount(spec) {
+  if (spec.shape === "spline") {
+    let sampleCount = 0;
+    for (let index = 0; index < spec.points.length; index += 1) {
+      const current = spec.points[index];
+      const next = spec.points[(index + 1) % spec.points.length];
+      sampleCount += Math.max(
+        1,
+        Math.ceil(Math.hypot(next.x - current.x, next.y - current.y) / spec.sampleSpacing)
+      );
+    }
+    return sampleCount;
+  }
+
+  const straightX = spec.straightX ?? spec.straight;
+  const straightY = spec.straightY ?? spec.straight;
+  const straightSamples =
+    2 * Math.max(1, Math.round(straightX / spec.sampleSpacing)) +
+    2 * Math.max(1, Math.round(straightY / spec.sampleSpacing));
+  const arcSamples =
+    4 * Math.max(
+      1,
+      Math.round((spec.cornerRadius * Math.PI / 2) / spec.sampleSpacing)
+    );
+  return straightSamples + arcSamples;
+}
+
+async function readTrackData(response, url) {
+  const contentLength = response.headers.get("content-length");
+  if (contentLength !== null && Number(contentLength) > MAX_TRACK_DATA_BYTES) {
+    throw new Error(`Track data in ${url} exceeds the size limit.`);
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) {
+    const text = await response.text();
+    if (new TextEncoder().encode(text).byteLength > MAX_TRACK_DATA_BYTES) {
+      throw new Error(`Track data in ${url} exceeds the size limit.`);
+    }
+    return JSON.parse(text);
+  }
+
+  const chunks = [];
+  let totalBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    totalBytes += value.byteLength;
+    if (totalBytes > MAX_TRACK_DATA_BYTES) {
+      await reader.cancel();
+      throw new Error(`Track data in ${url} exceeds the size limit.`);
+    }
+    chunks.push(value);
+  }
+
+  const bytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
 
 function pushPoint(points, x, y) {
   const last = points[points.length - 1];
@@ -328,43 +407,42 @@ function nearestIndex(points, x, y) {
 }
 
 function validateSpec(spec) {
+  if (!spec || typeof spec !== "object" || Array.isArray(spec)) {
+    throw new Error("Track specification must be an object.");
+  }
   if (spec.shape !== "rounded-rect" && spec.shape !== "spline") {
     throw new Error(`Track "${spec.id}" uses an unsupported shape.`);
   }
-  if (!(spec.width > 0)) {
+  if (!isBoundedNumber(spec.width, 0.001, MAX_TRACK_DIMENSION)) {
     throw new Error(`Track "${spec.id}" has invalid dimensions.`);
+  }
+  if (spec.width < 10) {
+    throw new Error(`Track "${spec.id}" is narrower than the car can drive.`);
   }
   const straightX = spec.straightX ?? spec.straight;
   const straightY = spec.straightY ?? spec.straight;
   if (
-    !Number.isFinite(spec.sampleSpacing) ||
-    spec.sampleSpacing <= 0 ||
+    !isBoundedNumber(
+      spec.sampleSpacing,
+      MIN_SAMPLE_SPACING,
+      MAX_SAMPLE_SPACING
+    ) ||
     (spec.shape === "rounded-rect" &&
-      (!Number.isFinite(straightX) ||
-        straightX <= 0 ||
-        !Number.isFinite(straightY) ||
-        straightY <= 0 ||
-        !Number.isFinite(spec.cornerRadius) ||
-        spec.cornerRadius <= 0))
+      (!isBoundedNumber(straightX, 0.001, MAX_TRACK_DIMENSION) ||
+        !isBoundedNumber(straightY, 0.001, MAX_TRACK_DIMENSION) ||
+        !isBoundedNumber(spec.cornerRadius, 0.001, MAX_TRACK_DIMENSION)))
   ) {
     throw new Error(`Track "${spec.id}" has invalid centerline dimensions.`);
-  }
-  if (spec.width < 10) {
-    throw new Error(`Track "${spec.id}" is narrower than the car can drive.`);
   }
   const runoffWidth = spec.runoffWidth ?? config.runoffWidth;
   const barrierWidth = spec.barrierWidth ?? config.barrierWidth;
   const kerbWidth = spec.kerbWidth ?? config.kerbWidth;
   const stripeLength = spec.kerbStripeLength ?? config.kerbStripeLength;
   if (
-    !Number.isFinite(runoffWidth) ||
-    runoffWidth <= 0 ||
-    !Number.isFinite(barrierWidth) ||
-    barrierWidth <= 0 ||
-    !Number.isFinite(kerbWidth) ||
-    kerbWidth <= 0 ||
-    !Number.isFinite(stripeLength) ||
-    stripeLength <= 0
+    !isBoundedNumber(runoffWidth, 0.001, MAX_TRACK_DIMENSION) ||
+    !isBoundedNumber(barrierWidth, 0.001, MAX_TRACK_DIMENSION) ||
+    !isBoundedNumber(kerbWidth, 0.001, MAX_TRACK_DIMENSION) ||
+    !isBoundedNumber(stripeLength, 0.001, MAX_TRACK_DIMENSION)
   ) {
     throw new Error(`Track "${spec.id}" has invalid boundary dimensions.`);
   }
@@ -375,15 +453,24 @@ function validateSpec(spec) {
     if (
       !Array.isArray(spec.points) ||
       spec.points.length < 4 ||
+      spec.points.length > MAX_SPLINE_POINTS ||
       spec.points.some(
         (point) =>
           !point ||
-          !Number.isFinite(point.x) ||
-          !Number.isFinite(point.y)
+          !isBoundedNumber(point.x, -MAX_TRACK_COORDINATE, MAX_TRACK_COORDINATE) ||
+          !isBoundedNumber(point.y, -MAX_TRACK_COORDINATE, MAX_TRACK_COORDINATE)
       ) ||
       !spec.startPoint ||
-      !Number.isFinite(spec.startPoint.x) ||
-      !Number.isFinite(spec.startPoint.y)
+      !isBoundedNumber(
+        spec.startPoint.x,
+        -MAX_TRACK_COORDINATE,
+        MAX_TRACK_COORDINATE
+      ) ||
+      !isBoundedNumber(
+        spec.startPoint.y,
+        -MAX_TRACK_COORDINATE,
+        MAX_TRACK_COORDINATE
+      )
     ) {
       throw new Error(`Track "${spec.id}" has an invalid spline centerline.`);
     }
@@ -398,25 +485,43 @@ function validateSpec(spec) {
   if (spec.obstacles !== undefined && !Array.isArray(spec.obstacles)) {
     throw new Error(`Track "${spec.id}" has an invalid obstacle list.`);
   }
+  if (spec.obstacles && spec.obstacles.length > MAX_OBSTACLES) {
+    throw new Error(`Track "${spec.id}" has too many obstacles.`);
+  }
   if (spec.chicaneCount !== undefined &&
-      (!Number.isInteger(spec.chicaneCount) || spec.chicaneCount < 0)) {
+      (!Number.isInteger(spec.chicaneCount) ||
+        spec.chicaneCount < 0 ||
+        spec.chicaneCount > MAX_SPLINE_POINTS)) {
     throw new Error(`Track "${spec.id}" has an invalid chicane count.`);
   }
   if (spec.hairpinCount !== undefined &&
-      (!Number.isInteger(spec.hairpinCount) || spec.hairpinCount < 0)) {
+      (!Number.isInteger(spec.hairpinCount) ||
+        spec.hairpinCount < 0 ||
+        spec.hairpinCount > MAX_SPLINE_POINTS)) {
     throw new Error(`Track "${spec.id}" has an invalid hairpin count.`);
   }
   if (
     spec.obstacles &&
     spec.obstacles.some(
       (obstacle) =>
-        !Number.isFinite(obstacle.x) ||
-        !Number.isFinite(obstacle.y) ||
-        !Number.isFinite(obstacle.radius) ||
-        obstacle.radius <= 0
+        !obstacle ||
+        !isBoundedNumber(
+          obstacle.x,
+          -MAX_TRACK_COORDINATE,
+          MAX_TRACK_COORDINATE
+        ) ||
+        !isBoundedNumber(
+          obstacle.y,
+          -MAX_TRACK_COORDINATE,
+          MAX_TRACK_COORDINATE
+        ) ||
+        !isBoundedNumber(obstacle.radius, 0.001, MAX_TRACK_DIMENSION)
     )
   ) {
     throw new Error(`Track "${spec.id}" has an invalid obstacle.`);
+  }
+  if (getCenterlineSampleCount(spec) > MAX_CENTERLINE_SAMPLES) {
+    throw new Error(`Track "${spec.id}" requires too many centerline samples.`);
   }
 }
 
@@ -492,8 +597,11 @@ export async function loadTrack(url, id) {
       `Could not load ${url} (${response.status}). Open this project through a static file server, not as a file:// page.`
     );
   }
-  const data = await response.json();
-  const spec = (data.tracks || []).find((track) => track.id === id);
+  const data = await readTrackData(response, url);
+  if (!data || !Array.isArray(data.tracks) || data.tracks.length > MAX_TRACKS) {
+    throw new Error(`Track list in ${url} is invalid or too large.`);
+  }
+  const spec = data.tracks.find((track) => track && track.id === id);
   if (!spec) {
     throw new Error(`Track "${id}" is missing from ${url}.`);
   }
